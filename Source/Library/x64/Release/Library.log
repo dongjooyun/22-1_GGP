@@ -1,32 +1,7 @@
-﻿  Game.cpp
-C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winbase.h(7704,48): warning C5039: 'TpSetCallbackCleanupGroup': pointer or reference to potentially throwing function passed to 'extern "C"' function under -EHc. Undefined behavior may occur if this function throws an exception.
-C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(10971,22): warning C4668: '_WIN32_WINNT_WIN10_TH2' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
-C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(10977,22): warning C4668: '_WIN32_WINNT_WIN10_RS1' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
-C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(10982,22): warning C4668: '_WIN32_WINNT_WIN10_TH2' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
-C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(10986,22): warning C4668: '_WIN32_WINNT_WIN10_TH2' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
-C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(10993,22): warning C4668: '_WIN32_WINNT_WIN10_RS2' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
-C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(11003,22): warning C4668: '_WIN32_WINNT_WIN10_RS2' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
-C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(11007,22): warning C4668: '_WIN32_WINNT_WIN10_TH2' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
-C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(11012,22): warning C4668: '_WIN32_WINNT_WIN10_RS3' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
-C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(11019,22): warning C4668: '_WIN32_WINNT_WIN10_RS4' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
-C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(11022,22): warning C4668: '_WIN32_WINNT_WIN10_RS1' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
-C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(11025,22): warning C4668: '_WIN32_WINNT_WIN10_RS4' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
-C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(11030,22): warning C4668: '_WIN32_WINNT_WIN10_RS1' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
-C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(11033,22): warning C4668: '_WIN32_WINNT_WIN10_RS5' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
-C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(11240,22): warning C4668: '_WIN32_WINNT_WIN10_RS2' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
-C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(11264,22): warning C4668: '_WIN32_WINNT_WIN10_RS5' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
-C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(14736,22): warning C4668: '_WIN32_WINNT_WIN10_RS5' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
-C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(14938,22): warning C4668: '_WIN32_WINNT_WIN10_RS5' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
-C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(15041,22): warning C4668: '_WIN32_WINNT_WIN10_RS5' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
-C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(15137,21): warning C4668: '_WIN32_WINNT_WIN10_RS5' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
-C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(15241,22): warning C4668: '_WIN32_WINNT_WIN10_RS5' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
-C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(15985,23): warning C4668: '_WIN32_WINNT_WIN10_RS2' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
-C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(16073,22): warning C4668: '_WIN32_WINNT_WIN10_RS2' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
-C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(16199,22): warning C4668: '_WIN32_WINNT_WIN10_RS3' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
-C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(16348,22): warning C4668: '_WIN32_WINNT_WIN10_RS4' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
-C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(16361,22): warning C4668: '_WIN32_WINNT_WIN10_RS4' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
-C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(16591,22): warning C4668: '_WIN32_WINNT_WIN10_RS1' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
-  Library.vcxproj -> C:\Users\Home\Documents\DongjooYun\KHU\2022-1_GGP\NiNiEngine\Build\x64\Release\Library.lib
+﻿  Library.vcxproj -> C:\Users\Home\Documents\DongjooYun\KHU\2022-1_GGP\NiNiEngine\Build\x64\Release\Library.lib
+  하위 디렉터리 또는 파일 C:\Users\Home\Documents\DongjooYun\KHU\2022-1_GGP\NiNiEngine\Build\..\Library\x64\Release이(가) 이미 있습니다.
+  C:\Users\Home\Documents\DongjooYun\KHU\2022-1_GGP\NiNiEngine\Build\x64\Release\Game.exe
+  C:\Users\Home\Documents\DongjooYun\KHU\2022-1_GGP\NiNiEngine\Build\x64\Release\Game.pdb
   C:\Users\Home\Documents\DongjooYun\KHU\2022-1_GGP\NiNiEngine\Build\x64\Release\Library.lib
   C:\Users\Home\Documents\DongjooYun\KHU\2022-1_GGP\NiNiEngine\Build\x64\Release\Library.pdb
-          2개 파일이 복사되었습니다.
+          4개 파일이 복사되었습니다.

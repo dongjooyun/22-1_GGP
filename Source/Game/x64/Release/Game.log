@@ -1,6 +1,39 @@
-﻿  Generating code
-  Previous IPDB not found, fall back to full compilation.
-  All 2 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
-C:\Users\Home\Documents\DongjooYun\KHU\2022-1_GGP\NiNiEngine\Source\Game\Main.cpp(38): warning C4711: function 'void __cdecl library::PrintHi(void)' selected for automatic inline expansion
+﻿  Main.cpp
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winbase.h(7704,48): warning C5039: 'TpSetCallbackCleanupGroup': pointer or reference to potentially throwing function passed to 'extern "C"' function under -EHc. Undefined behavior may occur if this function throws an exception.
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(10971,22): warning C4668: '_WIN32_WINNT_WIN10_TH2' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(10977,22): warning C4668: '_WIN32_WINNT_WIN10_RS1' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(10982,22): warning C4668: '_WIN32_WINNT_WIN10_TH2' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(10986,22): warning C4668: '_WIN32_WINNT_WIN10_TH2' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(10993,22): warning C4668: '_WIN32_WINNT_WIN10_RS2' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(11003,22): warning C4668: '_WIN32_WINNT_WIN10_RS2' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(11007,22): warning C4668: '_WIN32_WINNT_WIN10_TH2' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(11012,22): warning C4668: '_WIN32_WINNT_WIN10_RS3' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(11019,22): warning C4668: '_WIN32_WINNT_WIN10_RS4' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(11022,22): warning C4668: '_WIN32_WINNT_WIN10_RS1' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(11025,22): warning C4668: '_WIN32_WINNT_WIN10_RS4' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(11030,22): warning C4668: '_WIN32_WINNT_WIN10_RS1' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(11033,22): warning C4668: '_WIN32_WINNT_WIN10_RS5' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(11240,22): warning C4668: '_WIN32_WINNT_WIN10_RS2' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(11264,22): warning C4668: '_WIN32_WINNT_WIN10_RS5' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(14736,22): warning C4668: '_WIN32_WINNT_WIN10_RS5' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(14938,22): warning C4668: '_WIN32_WINNT_WIN10_RS5' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(15041,22): warning C4668: '_WIN32_WINNT_WIN10_RS5' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(15137,21): warning C4668: '_WIN32_WINNT_WIN10_RS5' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(15241,22): warning C4668: '_WIN32_WINNT_WIN10_RS5' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(15985,23): warning C4668: '_WIN32_WINNT_WIN10_RS2' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(16073,22): warning C4668: '_WIN32_WINNT_WIN10_RS2' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(16199,22): warning C4668: '_WIN32_WINNT_WIN10_RS3' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(16348,22): warning C4668: '_WIN32_WINNT_WIN10_RS4' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(16361,22): warning C4668: '_WIN32_WINNT_WIN10_RS4' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.20348.0\um\winioctl.h(16591,22): warning C4668: '_WIN32_WINNT_WIN10_RS1' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
+C:\Users\Home\Documents\DongjooYun\KHU\2022-1_GGP\NiNiEngine\Source\Game\Main.cpp(97,113): warning C4100: 'nCmdShow': unreferenced formal parameter
+C:\Users\Home\Documents\DongjooYun\KHU\2022-1_GGP\NiNiEngine\Source\Game\Main.cpp(97,93): warning C4100: 'lpCmdLine': unreferenced formal parameter
+C:\Users\Home\Documents\DongjooYun\KHU\2022-1_GGP\NiNiEngine\Source\Game\Main.cpp(97,66): warning C4100: 'hPrevInstance': unreferenced formal parameter
+C:\Users\Home\Documents\DongjooYun\KHU\2022-1_GGP\NiNiEngine\Source\Game\Main.cpp(97,36): warning C4100: 'hInstance': unreferenced formal parameter
+  Generating code
+  2 of 2 functions (100.0%) were compiled.
+    1 functions were new in current compilation
+    0 functions had inline decision re-evaluated but remain unchanged
+C:\Users\Home\Documents\DongjooYun\KHU\2022-1_GGP\NiNiEngine\Source\Game\Main.cpp(99): warning C4711: function 'void __cdecl library::PrintHi(void)' selected for automatic inline expansion
   Finished generating code
   Game.vcxproj -> C:\Users\Home\Documents\DongjooYun\KHU\2022-1_GGP\NiNiEngine\Build\x64\Release\Game.exe
