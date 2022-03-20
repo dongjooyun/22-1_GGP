@@ -10,7 +10,9 @@ namespace library
     D3D_DRIVER_TYPE         g_driverType = D3D_DRIVER_TYPE_NULL;
     D3D_FEATURE_LEVEL       g_featureLevel = D3D_FEATURE_LEVEL_11_0;
     ID3D11Device* g_pd3dDevice = nullptr;
+    ComPtr<ID3D11Device> pD3dDevice;
     ID3D11Device1* g_pd3dDevice1 = nullptr;
+    ComPtr<ID3D11Device1> pD3dDevice1;
     ID3D11DeviceContext* g_pImmediateContext = nullptr;
     ID3D11DeviceContext1* g_pImmediateContext1 = nullptr;
     IDXGISwapChain* g_pSwapChain = nullptr;
@@ -79,7 +81,7 @@ namespace library
     F---F---F---F---F---F---F---F---F---F---F---F---F---F---F---F---F-F*/
     HRESULT InitWindow(_In_ HINSTANCE hInstance, _In_ INT nCmdShow)
     {
-        // Register class
+        // Register the window class
         WNDCLASSEX wcex;
         wcex.cbSize = sizeof(WNDCLASSEX);
         wcex.style = CS_HREDRAW | CS_VREDRAW;
@@ -96,7 +98,7 @@ namespace library
         if (!RegisterClassEx(&wcex))
             return E_FAIL;
 
-        // Create window
+        // Create a window
         g_hInst = hInstance;
         RECT rc = { 0, 0, 800, 600 };
         AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
@@ -107,6 +109,7 @@ namespace library
         if (!g_hWnd)
             return E_FAIL;
 
+        // Show the window
         ShowWindow(g_hWnd, nCmdShow);
 
         return S_OK;
@@ -122,6 +125,7 @@ namespace library
     F---F---F---F---F---F---F---F---F---F---F---F---F---F---F---F---F-F*/
     HRESULT InitDevice()
     {
+        // Create Direct3D 11 device and context
         HRESULT hr = S_OK;
 
         RECT rc;
@@ -129,11 +133,11 @@ namespace library
         UINT width = rc.right - rc.left;
         UINT height = rc.bottom - rc.top;
 
-        UINT createDeviceFlags = 0;
-#ifdef _DEBUG
-        createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
-#endif
-
+        DWORD createDeviceFlags = 0;
+        #ifdef _DEBUG
+            createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
+        #endif
+        
         D3D_DRIVER_TYPE driverTypes[] =
         {
             D3D_DRIVER_TYPE_HARDWARE,
@@ -170,7 +174,8 @@ namespace library
         if (FAILED(hr))
             return hr;
 
-        // Obtain DXGI factory from device (since we used nullptr for pAdapter above)
+        // Obtain DXGI factory from device
+        //(since we used nullptr for pAdapter above)
         IDXGIFactory1* dxgiFactory = nullptr;
         {
             IDXGIDevice* dxgiDevice = nullptr;
@@ -195,7 +200,6 @@ namespace library
         hr = dxgiFactory->QueryInterface(__uuidof(IDXGIFactory2), reinterpret_cast<void**>(&dxgiFactory2));
         if (dxgiFactory2)
         {
-            // DirectX 11.1 or later
             hr = g_pd3dDevice->QueryInterface(__uuidof(ID3D11Device1), reinterpret_cast<void**>(&g_pd3dDevice1));
             if (SUCCEEDED(hr))
             {
@@ -221,7 +225,6 @@ namespace library
         }
         else
         {
-            // DirectX 11.0 systems
             DXGI_SWAP_CHAIN_DESC sd = {};
             sd.BufferCount = 1;
             sd.BufferDesc.Width = width;
@@ -238,25 +241,30 @@ namespace library
             hr = dxgiFactory->CreateSwapChain(g_pd3dDevice, &sd, &g_pSwapChain);
         }
 
-        // Note this tutorial doesn't handle full-screen swapchains so we block the ALT+ENTER shortcut
-        dxgiFactory->MakeWindowAssociation(g_hWnd, DXGI_MWA_NO_ALT_ENTER);
+        //dxgiFactory->MakeWindowAssociation(g_hWnd, DXGI_MWA_NO_ALT_ENTER);
 
         dxgiFactory->Release();
 
         if (FAILED(hr))
             return hr;
 
-        // Create a render target view
+        // Create render target view
+        ID3D11RenderTargetView* pRenderTargetView = nullptr;
         ID3D11Texture2D* pBackBuffer = nullptr;
-        hr = g_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&pBackBuffer));
+        hr = g_pSwapChain->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
+        //hr = g_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&pBackBuffer));
         if (FAILED(hr))
             return hr;
 
+        //hr = pD3dDevice->CreateRenderTargetView(pBackBuffer, nullptr, &pRenderTargetView);
         hr = g_pd3dDevice->CreateRenderTargetView(pBackBuffer, nullptr, &g_pRenderTargetView);
         pBackBuffer->Release();
         if (FAILED(hr))
+        {
             return hr;
+        }
 
+        //g_pImmediateContext->OMSetRenderTargets(1, &pRenderTargetView, nullptr);
         g_pImmediateContext->OMSetRenderTargets(1, &g_pRenderTargetView, nullptr);
 
         // Setup the viewport
@@ -267,6 +275,7 @@ namespace library
         vp.MaxDepth = 1.0f;
         vp.TopLeftX = 0;
         vp.TopLeftY = 0;
+
         g_pImmediateContext->RSSetViewports(1, &vp);
 
         return S_OK;
@@ -301,7 +310,7 @@ namespace library
         g_pImmediateContext->ClearRenderTargetView(g_pRenderTargetView, Colors::Gold);
         g_pSwapChain->Present(0, 0);
     }
-
+}
 // Lab00
 //#include "Game/Game.h"
 //
