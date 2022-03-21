@@ -22,7 +22,7 @@
 
 #include "Resource.h"
 
-constexpr LPCWSTR PSZ_COURSE_TITLE = L"Game Graphics Programming Lab01: Direct3D 11 Basics";
+constexpr LPCWSTR PSZ_COURSE_TITLE = L"Game Graphics Programming";
 
 using namespace DirectX;
 
