@@ -59,7 +59,7 @@ namespace library
     void Render();
 }
 
-// Lab00
+#pragma region Lab00
 ///*+===================================================================
 //  File:      GAME.H
 //
@@ -88,3 +88,4 @@ namespace library
 //    F---F---F---F---F---F---F---F---F---F---F---F---F---F---F---F---F-F*/
 //    void PrintHi();
 //}
+#pragma endregion

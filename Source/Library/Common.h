@@ -28,7 +28,8 @@ using namespace DirectX;
 
 #include <wrl.h>
 using namespace Microsoft::WRL;
-// Lab00
+
+#pragma region Lab00
 ///*+===================================================================
 //  File:      COMMON.H
 //
@@ -47,3 +48,4 @@ using namespace Microsoft::WRL;
 //#endif // ! UNICODE
 //
 //#include <windows.h>
+#pragma endregion

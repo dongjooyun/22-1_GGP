@@ -311,7 +311,8 @@ namespace library
         g_pSwapChain->Present(0, 0);
     }
 }
-// Lab00
+
+#pragma region Lab00
 //#include "Game/Game.h"
 //
 //namespace library
@@ -325,3 +326,4 @@ namespace library
 //        MessageBox(nullptr, L"hi", L"Game Graphics Programming", MB_OK);
 //    }
 //}
+#pragma endregion

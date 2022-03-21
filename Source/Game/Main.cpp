@@ -80,8 +80,7 @@ INT WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
     return static_cast<INT>(msg.wParam);
 }
 
-
-//// Lab00
+#pragma region Lab00
 ///*+===================================================================
 //  File:      MAIN.CPP
 //
@@ -124,3 +123,4 @@ INT WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 //
 //    return 0;
 //}
+#pragma endregion 
