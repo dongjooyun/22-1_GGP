@@ -311,19 +311,3 @@ namespace library
         g_pSwapChain->Present(0, 0);
     }
 }
-
-#pragma region Lab00
-//#include "Game/Game.h"
-//
-//namespace library
-//{
-//    /*--------------------------------------------------------------------
-//      Function definitions
-//    --------------------------------------------------------------------*/
-//    void PrintHi()
-//    {
-//        OutputDebugString(L"hi\n");
-//        MessageBox(nullptr, L"hi", L"Game Graphics Programming", MB_OK);
-//    }
-//}
-#pragma endregion
