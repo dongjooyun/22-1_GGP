@@ -36,44 +36,15 @@
 -----------------------------------------------------------------F-F*/
 INT WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ INT nCmdShow)
 {
-    /*--------------------------------------------------------------------
-      TODO: Unreferenced parameters (remove the comment)
-    --------------------------------------------------------------------*/
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
-    /*--------------------------------------------------------------------
-      TODO: Initialization (remove the comment)
-    --------------------------------------------------------------------*/
-    if (FAILED(library::InitWindow(hInstance, nCmdShow)))
+
+    std::unique_ptr<library::Game> game = std::make_unique<library::Game>(L"Game Graphics Programming Lab 02: Object Oriented Design");
+    
+    if (FAILED(game->Initialize(hInstance, nCmdShow)))
     {
         return 0;
     }
 
-    if (FAILED(library::InitDevice()))
-    {
-        library::CleanupDevice();
-        return 0;
-    }
-    // Run the message loop
-    // Main message loop
-    MSG msg = { 0 };
-
-    while (WM_QUIT != msg.message)
-    {
-        if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
-        {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-        else
-        {
-            library::Render();
-        }
-    }
-    /*--------------------------------------------------------------------
-      TODO: Destroy (remove the comment)
-    --------------------------------------------------------------------*/
-    library::CleanupDevice();
-
-    return static_cast<INT>(msg.wParam);
+    return game->Run();
 }

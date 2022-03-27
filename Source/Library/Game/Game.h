@@ -12,50 +12,66 @@
 #pragma once
 
 #include "Common.h"
+#include "Window/MainWindow.h"
+#include "Renderer/Renderer.h"
 
 namespace library
 {
-    /*--------------------------------------------------------------------
-      Forward declarations
-    --------------------------------------------------------------------*/
 
-    /*F+F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F
-      Function: InitWindow
+    class Game
+    {
+    public:
+        Game(_In_ PCWSTR m_pszGamename);
+        ~Game();
+        HRESULT Initialize(_In_ HINSTANCE hInstance, _In_ INT nCmdShow);
+        INT Run();
+        PCWSTR GetGameName() const;
+    private:
+        PCWSTR m_pszGameName;
+        std::unique_ptr<MainWindow> m_mainWindow;
+        std::unique_ptr<Renderer> m_renderer;
+    };
+    ///*--------------------------------------------------------------------
+    //  Forward declarations
+    //--------------------------------------------------------------------*/
 
-      Summary:  Registers the window class and creates a window
+    ///*F+F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F
+    //  Function: InitWindow
 
-      Args:     HINSTANCE hInstance
-                  Handle to the instance
-                INT nCmdShow
-                  Is a flag that says whether the main application window
-                  will be minimized, maximized, or shown normally
+    //  Summary:  Registers the window class and creates a window
 
-        Returns:  HRESULT
-                    Status code
-    F---F---F---F---F---F---F---F---F---F---F---F---F---F---F---F---F-F*/
-    HRESULT InitWindow(_In_ HINSTANCE hInstance, _In_ INT nCmdShow);
+    //  Args:     HINSTANCE hInstance
+    //              Handle to the instance
+    //            INT nCmdShow
+    //              Is a flag that says whether the main application window
+    //              will be minimized, maximized, or shown normally
 
-    /*F+F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F
-      Function: InitDevice
+    //    Returns:  HRESULT
+    //                Status code
+    //F---F---F---F---F---F---F---F---F---F---F---F---F---F---F---F---F-F*/
+    //HRESULT InitWindow(_In_ HINSTANCE hInstance, _In_ INT nCmdShow);
 
-      Summary:  Create Direct3D device and swap chain
+    ///*F+F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F
+    //  Function: InitDevice
 
-      Returns:  HRESULT
-                  Status code
-    F---F---F---F---F---F---F---F---F---F---F---F---F---F---F---F---F-F*/
-    HRESULT InitDevice();
+    //  Summary:  Create Direct3D device and swap chain
 
-    /*F+F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F
-      Function: CleanupDevice
+    //  Returns:  HRESULT
+    //              Status code
+    //F---F---F---F---F---F---F---F---F---F---F---F---F---F---F---F---F-F*/
+    //HRESULT InitDevice();
 
-      Summary:  Clean up the objects we've created
-    F---F---F---F---F---F---F---F---F---F---F---F---F---F---F---F---F-F*/
-    void CleanupDevice();
+    ///*F+F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F
+    //  Function: CleanupDevice
 
-    /*F+F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F
-      Function: Render
+    //  Summary:  Clean up the objects we've created
+    //F---F---F---F---F---F---F---F---F---F---F---F---F---F---F---F---F-F*/
+    //void CleanupDevice();
 
-      Summary:  Render the frame
-    F---F---F---F---F---F---F---F---F---F---F---F---F---F---F---F---F-F*/
-    void Render();
+    ///*F+F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F+++F
+    //  Function: Render
+
+    //  Summary:  Render the frame
+    //F---F---F---F---F---F---F---F---F---F---F---F---F---F---F---F---F-F*/
+    //void Render();
 }
