@@ -1,15 +1,18 @@
 ﻿/*+===================================================================
   File:      MAIN.CPP
 
-  Summary:   This application demonstrates creating a Direct3D 11 device
+  Summary:   This application demonstrates creating a Direct3D 11
+             device in a object-oriented fashion
 
-  Origin:    http://msdn.microsoft.com/en-us/library/windows/apps/ff729718.aspx
+  Origin:    https://docs.microsoft.com/en-us/previous-versions//ff729719(v=vs.85)
 
   Originally created by Microsoft Corporation under MIT License
   © 2022 Kyung Hee University
 ===================================================================+*/
 
 #include "Common.h"
+
+#include <memory>
 
 #include "Game/Game.h"
 
@@ -40,7 +43,7 @@ INT WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
     UNREFERENCED_PARAMETER(lpCmdLine);
 
     std::unique_ptr<library::Game> game = std::make_unique<library::Game>(L"Game Graphics Programming Lab 02: Object Oriented Design");
-    
+
     if (FAILED(game->Initialize(hInstance, nCmdShow)))
     {
         return 0;
