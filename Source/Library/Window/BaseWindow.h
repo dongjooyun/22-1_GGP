@@ -98,6 +98,7 @@ namespace library
     LRESULT CALLBACK BaseWindow<DerivedType>::WindowProc(_In_ HWND hWnd, _In_ UINT uMsg, _In_ WPARAM wParam, _In_ LPARAM lParam)
     {
         DerivedType* pThis = nullptr;
+
         if (uMsg == WM_NCCREATE)
         {
             CREATESTRUCT* pCreate = reinterpret_cast<CREATESTRUCT*>(lParam);
@@ -109,10 +110,12 @@ namespace library
         {
             pThis = reinterpret_cast<DerivedType*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
         }
+
         if (pThis)
         {
             return pThis->HandleMessage(uMsg, wParam, lParam);
         }
+
         return DefWindowProc(hWnd, uMsg, wParam, lParam);
     }
 
@@ -124,8 +127,11 @@ namespace library
         Modifies: [m_hInstance, m_hWnd, m_pszWindowName].
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     template <class DerivedType>
-    BaseWindow<DerivedType>::BaseWindow() :
-        m_hInstance(nullptr), m_hWnd(nullptr), m_pszWindowName(L"") {}
+    BaseWindow<DerivedType>::BaseWindow()
+        : m_hInstance(nullptr)
+        , m_hWnd(nullptr)
+        , m_pszWindowName(L"") 
+    { }
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
         Method:   BaseWindow<DerivedType>::GetWindow()
@@ -189,7 +195,8 @@ namespace library
         _In_opt_ HMENU hMenu
     )
     {
-        // Register the window class
+        m_hInstance = hInstance;
+
         WNDCLASSEX wcex = {};
         wcex.cbSize = sizeof(WNDCLASSEX);
         wcex.style = CS_HREDRAW | CS_VREDRAW;
@@ -197,19 +204,20 @@ namespace library
         wcex.cbClsExtra = 0;
         wcex.cbWndExtra = 0;
         wcex.hInstance = hInstance;
-        wcex.hIcon = LoadIcon(hInstance, (LPCTSTR)IDI_TUTORIAL1);
+        wcex.hIcon = LoadIcon(hInstance, (LPCTSTR)IDI_TUTORIAL);
         wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
         wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
         wcex.lpszMenuName = nullptr;
         wcex.lpszClassName = GetWindowClassName();
-        wcex.hIconSm = LoadIcon(wcex.hInstance, (LPCTSTR)IDI_TUTORIAL1);
+        wcex.hIconSm = LoadIcon(wcex.hInstance, (LPCTSTR)IDI_TUTORIAL);
 
         if (!RegisterClassEx(&wcex))
         {
             return E_FAIL;
         }
 
-        // Create a window
+        m_pszWindowName = pszWindowName;
+
         m_hWnd = CreateWindow(wcex.lpszClassName, pszWindowName, dwStyle, CW_USEDEFAULT, CW_USEDEFAULT, nWidth, nHeight, hWndParent, hMenu, hInstance, this);
 
         if (!m_hWnd)
@@ -217,7 +225,6 @@ namespace library
             return E_FAIL;
         }
 
-        // Show the window
         ShowWindow(m_hWnd, nCmdShow);
 
         return S_OK;

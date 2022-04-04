@@ -18,15 +18,14 @@ namespace library
       Returns:  HRESULT
                   Status code
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-    /*--------------------------------------------------------------------
-      TODO: MainWindow::Initialize definition (remove the comment)
-    --------------------------------------------------------------------*/
     HRESULT MainWindow::Initialize(_In_ HINSTANCE hInstance, _In_ INT nCmdShow, _In_ PCWSTR pszWindowName)
     {
         RECT rc = { 0, 0, 800, 600 };
         AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
+
         return initialize(hInstance, nCmdShow, pszWindowName, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX, CW_USEDEFAULT, CW_USEDEFAULT, rc.right - rc.left, rc.bottom - rc.top);
     }
+
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
       Method:   MainWindow::GetWindowClassName
 
@@ -35,13 +34,11 @@ namespace library
       Returns:  PCWSTR
                   Name of the window class
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-    /*--------------------------------------------------------------------
-      TODO: MainWindow::GetWindowClassName definition (remove the comment)
-    --------------------------------------------------------------------*/
     PCWSTR MainWindow::GetWindowClassName() const
     {
-        return L"Lab02WindowClass";
+        return L"Lab03WindowClass";
     }
+
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
       Method:   MainWindow::HandleMessage
 
@@ -57,27 +54,23 @@ namespace library
       Returns:  LRESULT
                   Integer value that your program returns to Windows
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-    /*--------------------------------------------------------------------
-      TODO: MainWindow::HandleMessage definition (remove the comment)
-    --------------------------------------------------------------------*/
     LRESULT MainWindow::HandleMessage(_In_ UINT uMsg, _In_ WPARAM wParam, _In_ LPARAM lParam)
     {
         switch (uMsg)
         {
-        case WM_DESTROY:
-            PostQuitMessage(0);
-            break;
-
         case WM_PAINT:
             PAINTSTRUCT ps;
             HDC hdc;
             hdc = BeginPaint(m_hWnd, &ps);
             EndPaint(m_hWnd, &ps);
             break;
-        
+        case WM_DESTROY:
+            PostQuitMessage(0);
+            break;
         default:
             return DefWindowProc(m_hWnd, uMsg, wParam, lParam);
         }
+
         return 0;
     }
 }
