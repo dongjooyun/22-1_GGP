@@ -77,10 +77,10 @@
     </Image>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Shaders\Lab03_PS.hlsl">
+    <FxCompile Include="Shaders\Lab03_VS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\Lab03_VS.hlsl">
+    <FxCompile Include="Shaders\Lab03_PS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>

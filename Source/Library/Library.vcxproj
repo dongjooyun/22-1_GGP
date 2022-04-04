@@ -132,14 +132,8 @@ copy "$(TargetDir)" "$(SolutionDir)..\Library\x64\Release"</Command>
     <Image Include="directx.ico" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Shaders\Lab03_PS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-    </FxCompile>
-    <FxCompile Include="Shaders\Lab03_VS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
-    </FxCompile>
+    <FxCompile Include="Shaders\Lab03_PS.hlsl" />
+    <FxCompile Include="Shaders\Lab03_VS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\Lab03.fxh" />
