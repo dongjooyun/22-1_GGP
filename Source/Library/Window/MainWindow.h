@@ -49,3 +49,4 @@ namespace library
         LRESULT HandleMessage(_In_ UINT uMsg, _In_ WPARAM wParam, _In_ LPARAM lParam) override;
     };
 }
+

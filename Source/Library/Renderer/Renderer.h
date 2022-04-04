@@ -27,7 +27,7 @@ namespace library
     C---C---C---C---C---C---C---C---C---C---C---C---C---C---C---C---C-C*/
     struct SimpleVertex
     {
-        XMFLOAT3 Position;
+        XMFLOAT3 Postion;
     };
 
     /*C+C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C
