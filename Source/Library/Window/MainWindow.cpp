@@ -36,7 +36,7 @@ namespace library
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     PCWSTR MainWindow::GetWindowClassName() const
     {
-        return L"Lab03WindowClass";
+        return L"Lab04WindowClass";
     }
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M

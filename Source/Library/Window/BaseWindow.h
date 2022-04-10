@@ -130,8 +130,8 @@ namespace library
     BaseWindow<DerivedType>::BaseWindow()
         : m_hInstance(nullptr)
         , m_hWnd(nullptr)
-        , m_pszWindowName(L"") 
-    { }
+        , m_pszWindowName(L"")
+    {}
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
         Method:   BaseWindow<DerivedType>::GetWindow()
