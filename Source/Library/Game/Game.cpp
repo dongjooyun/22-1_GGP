@@ -12,7 +12,7 @@ namespace library
 
       Modifies: [m_pszGameName, m_mainWindow, m_renderer].
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-    Game::Game(PCWSTR pszGameName)
+    Game::Game(_In_ PCWSTR pszGameName)
         : m_pszGameName(pszGameName)
         , m_mainWindow(std::make_unique<MainWindow>())
         , m_renderer(std::make_unique<Renderer>())
@@ -25,7 +25,7 @@ namespace library
 
       Args:     HINSTANCE hInstance
                   Handle to the instance
-                INT nCmdShow
+              INT nCmdShow
                   Is a flag that says whether the main application window
                   will be minimized, maximized, or shown normally
 
@@ -69,7 +69,6 @@ namespace library
         QueryPerformanceCounter(&startTime);
 
         MSG msg = { 0 };
-
         while (WM_QUIT != msg.message)
         {
             if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
@@ -80,9 +79,12 @@ namespace library
             else
             {
                 QueryPerformanceCounter(&stopTime);
+
                 elapsedTime = static_cast<FLOAT>(stopTime.QuadPart - startTime.QuadPart);
                 elapsedTime /= static_cast<FLOAT>(frequency.QuadPart);
 
+                m_renderer->HandleInput(m_mainWindow->GetDirections(), m_mainWindow->GetMouseRelativeMovement(), elapsedTime);
+                m_mainWindow->ResetMouseMovement();
                 m_renderer->Update(elapsedTime);
                 m_renderer->Render();
             }

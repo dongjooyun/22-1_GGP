@@ -7,7 +7,7 @@
 
   Classes:  Game
 
-  © 2022 Kyung Hee University
+  � 2022 Kyung Hee University
 ===================================================================+*/
 #pragma once
 
@@ -18,7 +18,6 @@
 
 namespace library
 {
-
     /*C+C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C
       Class:    Game
 
