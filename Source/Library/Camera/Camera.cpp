@@ -101,16 +101,12 @@ namespace library
     void Camera::HandleInput(_In_ const DirectionsInput& directions, _In_ const MouseRelativeMovement& mouseRelativeMovement, _In_ FLOAT deltaTime)
     {
         m_yaw += static_cast<FLOAT>(mouseRelativeMovement.X * m_rotationSpeed * deltaTime);
-        m_pitch += static_cast<FLOAT>(mouseRelativeMovement.Y * m_rotationSpeed * deltaTime);
 
-        // Pitch's range : (-pi/2, pi/2)
-        if (m_pitch < -XM_PIDIV2) 
+        // m_pitch range: (-pi/2, pi/2)
+        if (m_pitch + static_cast<FLOAT>(mouseRelativeMovement.Y) * m_rotationSpeed > -XM_PIDIV2
+            && m_pitch + static_cast<FLOAT>(mouseRelativeMovement.Y) * m_rotationSpeed < XM_PIDIV2) 
         {
-            m_pitch = -XM_PIDIV2;
-        }
-        else if (m_pitch > XM_PIDIV2)
-        {
-            m_pitch = XM_PIDIV2;
+            m_pitch += static_cast<FLOAT>(mouseRelativeMovement.Y * m_rotationSpeed * deltaTime);
         }
 
         if (directions.bFront) 
@@ -158,20 +154,25 @@ namespace library
     {
         // Rotation matrix
         m_rotation = XMMatrixRotationRollPitchYaw(m_pitch, m_yaw, 0.0f);
+
         m_at = XMVector3TransformCoord(DEFAULT_FORWARD, m_rotation);
         m_at = XMVector3Normalize(m_at);
 
         // Update forward / right / up vector
         XMMATRIX RotateYTempMatrix = XMMatrixRotationY(m_yaw);
+
         m_cameraForward = XMVector3TransformCoord(DEFAULT_FORWARD, RotateYTempMatrix);
         m_cameraRight = XMVector3TransformCoord(DEFAULT_RIGHT, RotateYTempMatrix);
-        m_cameraUp = XMVector3TransformCoord(m_cameraUp, RotateYTempMatrix);
+        m_cameraUp = XMVector3TransformCoord(DEFAULT_UP, RotateYTempMatrix);
 
         // Update eye, at, up
         m_eye += m_moveBackForward * m_cameraForward;
         m_eye += m_moveLeftRight * m_cameraRight;
         m_eye += m_moveUpDown * m_cameraUp;
+
         m_at += m_eye;
+
+        m_up = m_cameraUp;
 
         // Reset movement
         m_moveBackForward = 0.0f;
