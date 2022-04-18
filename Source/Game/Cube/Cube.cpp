@@ -24,9 +24,5 @@ Cube::Cube(const std::filesystem::path& textureFilePath)
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void Cube::Update(_In_ FLOAT deltaTime)
 {
-    /*static FLOAT s_totalTime = 0.0f;
-    s_totalTime += deltaTime;
-
-    m_world = XMMatrixTranslation(0.0f, XMScalarSin(s_totalTime), 0.0f) * XMMatrixRotationY(s_totalTime);*/
     m_world = XMMatrixTranslation(0.0f, XMScalarSin(deltaTime), 0.0f) * XMMatrixRotationY(deltaTime);
 }

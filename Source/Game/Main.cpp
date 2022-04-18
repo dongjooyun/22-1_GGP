@@ -63,7 +63,7 @@ INT WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
         return 0;
     }
 
-    std::shared_ptr<Cube> cube = std::make_shared<Cube>("seafloor.dds");
+    std::shared_ptr<Cube> cube = std::make_shared<Cube>("cloudy2.dds");
     if (FAILED(game->GetRenderer()->AddRenderable(L"Cube", cube)))
     {
         return 0;
@@ -79,7 +79,7 @@ INT WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
         return 0;
     }
 
-    std::shared_ptr<MyCube> myCube = std::make_shared<MyCube>("newgrass.dds");
+    std::shared_ptr<MyCube> myCube = std::make_shared<MyCube>("cloudy3.dds");
     if (FAILED(game->GetRenderer()->AddRenderable(L"MyCube", myCube)))
     {
         return 0;
