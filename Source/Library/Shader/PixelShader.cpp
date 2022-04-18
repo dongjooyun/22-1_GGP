@@ -41,7 +41,6 @@ namespace library
         ComPtr<ID3DBlob> pPSBlob = nullptr;
 
         hr = compile(pPSBlob.GetAddressOf());
-
         if (FAILED(hr))
         {
             MessageBox(nullptr, L"Pixel shader compile falied", L"Error", MB_OK);
@@ -49,7 +48,6 @@ namespace library
         }
 
         hr = pDevice->CreatePixelShader(pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), nullptr, m_pixelShader.GetAddressOf());
-
         if (FAILED(hr))
         {
             MessageBox(nullptr, L"Cannot create pixel shader", L"Error", NULL);

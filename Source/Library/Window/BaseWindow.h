@@ -221,7 +221,6 @@ namespace library
         m_pszWindowName = pszWindowName;
 
         m_hWnd = CreateWindow(wcex.lpszClassName, pszWindowName, dwStyle, CW_USEDEFAULT, CW_USEDEFAULT, nWidth, nHeight, hWndParent, hMenu, hInstance, this);
-
         if (!m_hWnd)
         {
             MessageBox(nullptr, L"Cannot create window!", L"Error", NULL);

@@ -6,17 +6,18 @@
   Origin:    http://msdn.microsoft.com/en-us/library/windows/apps/ff729718.aspx
 
   Originally created by Microsoft Corporation under MIT License
-  � 2022 Kyung Hee University
+  © 2022 Kyung Hee University
 ===================================================================+*/
 
 #include "Common.h"
 
+#include <cstdio>
+#include <filesystem>
 #include <memory>
+#include <source_location>
 
-#include "Cube/CenterCube.h"
-#include "Cube/RevolvingCube.h"
+#include "Cube/Cube.h"
 #include "Cube/MyCube.h"
-
 #include "Game/Game.h"
 
 /*F+F+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -42,15 +43,13 @@
 -----------------------------------------------------------------F-F*/
 INT WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ INT nCmdShow)
 {
-
 #ifdef _DEBUG
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
-
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
 
-    std::unique_ptr<library::Game> game = std::make_unique<library::Game>(L"Game Graphics Programming Assignment 01: Flying Camera");
+    std::unique_ptr<library::Game> game = std::make_unique<library::Game>(L"Game Graphics Programming Lab 05: Texture Mapping and Constant Buffers");
 
     std::shared_ptr<library::VertexShader> vertexShader = std::make_shared<library::VertexShader>(L"Shaders/Shaders.fxh", "VS", "vs_5_0");
     if (FAILED(game->GetRenderer()->AddVertexShader(L"MainShader", vertexShader)))
@@ -64,45 +63,23 @@ INT WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
         return 0;
     }
 
-    // Add Center Cube
-    std::shared_ptr<CenterCube> centerCube = std::make_shared<CenterCube>();
-
-    if (FAILED(game->GetRenderer()->AddRenderable(L"CenterCube", centerCube)))
+    std::shared_ptr<Cube> cube = std::make_shared<Cube>("seafloor.dds");
+    if (FAILED(game->GetRenderer()->AddRenderable(L"Cube", cube)))
     {
         return 0;
     }
 
-    if (FAILED(game->GetRenderer()->SetVertexShaderOfRenderable(L"CenterCube", L"MainShader")))
+    if (FAILED(game->GetRenderer()->SetVertexShaderOfRenderable(L"Cube", L"MainShader")))
     {
         return 0;
     }
 
-    if (FAILED(game->GetRenderer()->SetPixelShaderOfRenderable(L"CenterCube", L"MainShader")))
+    if (FAILED(game->GetRenderer()->SetPixelShaderOfRenderable(L"Cube", L"MainShader")))
     {
         return 0;
     }
 
-    // Add Revolving Cube
-    std::shared_ptr<RevolvingCube> revolvingCube = std::make_shared<RevolvingCube>();
-
-    if (FAILED(game->GetRenderer()->AddRenderable(L"RevolvingCube", revolvingCube)))
-    {
-        return 0;
-    }
-
-    if (FAILED(game->GetRenderer()->SetVertexShaderOfRenderable(L"RevolvingCube", L"MainShader")))
-    {
-        return 0;
-    }
-
-    if (FAILED(game->GetRenderer()->SetPixelShaderOfRenderable(L"RevolvingCube", L"MainShader")))
-    {
-        return 0;
-    }
-
-    // Add Custom Cube
-    std::shared_ptr<MyCube> myCube = std::make_shared<MyCube>();
-
+    std::shared_ptr<MyCube> myCube = std::make_shared<MyCube>("newgrass.dds");
     if (FAILED(game->GetRenderer()->AddRenderable(L"MyCube", myCube)))
     {
         return 0;

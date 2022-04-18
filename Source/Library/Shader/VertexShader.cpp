@@ -20,8 +20,8 @@ namespace library
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     VertexShader::VertexShader(_In_ PCWSTR pszFileName, _In_ PCSTR pszEntryPoint, _In_ PCSTR pszShaderModel)
         : Shader(pszFileName, pszEntryPoint, pszShaderModel)
-        , m_vertexShader(nullptr)
         , m_vertexLayout(nullptr)
+        , m_vertexShader(nullptr)
     {}
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
@@ -40,9 +40,7 @@ namespace library
         HRESULT hr = S_OK;
 
         ComPtr<ID3DBlob> pVSBlob = nullptr;
-
         hr = compile(pVSBlob.GetAddressOf());
-
         if (FAILED(hr))
         {
             MessageBox(nullptr, L"Vertex Shader compile failed!", L"Error", MB_OK);
@@ -50,7 +48,6 @@ namespace library
         }
 
         hr = pDevice->CreateVertexShader(pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), nullptr, m_vertexShader.GetAddressOf());
-
         if (FAILED(hr))
         {
             MessageBox(nullptr, L"Cannot create vertex shader!", L"Error", NULL);
@@ -60,18 +57,18 @@ namespace library
         D3D11_INPUT_ELEMENT_DESC layout[] =
         {
             { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+            { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 }
         };
         UINT numElements = ARRAYSIZE(layout);
 
         hr = pDevice->CreateInputLayout(layout, numElements, pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), m_vertexLayout.GetAddressOf());
-
         if (FAILED(hr))
         {
             MessageBox(nullptr, L"Cannot create input layout", L"Error", NULL);
             return hr;
         }
 
-        return hr;
+        return S_OK;
     }
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
