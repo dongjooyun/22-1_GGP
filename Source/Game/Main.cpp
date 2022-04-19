@@ -79,7 +79,7 @@ INT WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
         return 0;
     }
 
-    std::shared_ptr<MyCube> myCube = std::make_shared<MyCube>("cloudy3.dds");
+    std::shared_ptr<MyCube> myCube = std::make_shared<MyCube>("attjw-wesfo.dds");
     if (FAILED(game->GetRenderer()->AddRenderable(L"MyCube", myCube)))
     {
         return 0;
