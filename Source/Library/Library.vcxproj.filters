@@ -52,6 +52,12 @@
     <Filter Include="Source Files\Texture">
       <UniqueIdentifier>{aecefbc8-8cfa-43ba-abee-47d77052a47a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Light">
+      <UniqueIdentifier>{7cef2c9e-a937-4f83-85f6-ae4d57dda45a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Light">
+      <UniqueIdentifier>{9f95c2db-6df1-4fc3-8510-239358c59861}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common.h">
@@ -93,6 +99,9 @@
     <ClInclude Include="Texture\DDSTextureLoader.h">
       <Filter>Header Files\Texture</Filter>
     </ClInclude>
+    <ClInclude Include="Light\PointLight.h">
+      <Filter>Header Files\Light</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Game\Game.cpp">
@@ -122,6 +131,9 @@
     <ClCompile Include="Texture\DDSTextureLoader.cpp">
       <Filter>Source Files\Texture</Filter>
     </ClCompile>
+    <ClCompile Include="Light\PointLight.cpp">
+      <Filter>Source Files\Light</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">
@@ -143,6 +155,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Game\Shaders\Shaders.fxh">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="..\Game\Shaders\PhongShaders.fxh">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

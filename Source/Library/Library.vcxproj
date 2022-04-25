@@ -116,6 +116,7 @@ copy "$(TargetDir)" "$(SolutionDir)..\Library\x64\Release"</Command>
     <ClInclude Include="Camera\Camera.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="Game\Game.h" />
+    <ClInclude Include="Light\PointLight.h" />
     <ClInclude Include="Renderer\DataTypes.h" />
     <ClInclude Include="Renderer\Renderable.h" />
     <ClInclude Include="Renderer\Renderer.h" />
@@ -130,6 +131,7 @@ copy "$(TargetDir)" "$(SolutionDir)..\Library\x64\Release"</Command>
   <ItemGroup>
     <ClCompile Include="Camera\Camera.cpp" />
     <ClCompile Include="Game\Game.cpp" />
+    <ClCompile Include="Light\PointLight.cpp" />
     <ClCompile Include="Renderer\Renderable.cpp" />
     <ClCompile Include="Renderer\Renderer.cpp" />
     <ClCompile Include="Shader\PixelShader.cpp" />
@@ -149,6 +151,7 @@ copy "$(TargetDir)" "$(SolutionDir)..\Library\x64\Release"</Command>
     <FxCompile Include="..\Game\Shaders\VS.hlsl" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\Game\Shaders\PhongShaders.fxh" />
     <None Include="..\Game\Shaders\Shaders.fxh" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

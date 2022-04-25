@@ -11,9 +11,10 @@ namespace library
       Args:     const std::filesystem::path& textureFilePath
                   Path to the texture to use
 
-      Modifies: [m_vertexBuffer, m_indexBuffer, m_constantBuffer,
-                 m_textureRV, m_samplerLinear, m_vertexShader,
-                 m_pixelShader, m_textureFilePath, m_world].
+      Modifies: [m_vertexBuffer, m_indexBuffer, m_constantBuffer, 
+                 m_textureRV, m_samplerLinear, m_vertexShader, 
+                 m_pixelShader, m_textureFilePath, m_outputColor,
+                 m_world].
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     Renderable::Renderable(_In_ const std::filesystem::path& textureFilePath)
         : m_vertexBuffer(nullptr)
@@ -24,6 +25,35 @@ namespace library
         , m_vertexShader(nullptr)
         , m_pixelShader(nullptr)
         , m_textureFilePath(textureFilePath)
+        , m_outputColor(XMFLOAT4())
+        , m_bHasTextures(TRUE)
+        , m_world(XMMatrixIdentity())
+    {}
+
+    /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+      Method:   Renderable::Renderable
+
+      Summary:  Constructor
+
+      Args:     const XMFLOAT4* outputColor
+                  Default color of the renderable
+
+      Modifies: [m_vertexBuffer, m_indexBuffer, m_constantBuffer, 
+                 m_textureRV, m_samplerLinear, m_vertexShader, 
+                 m_pixelShader, m_textureFilePath, m_outputColor,
+                 m_world].
+    M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
+    Renderable::Renderable(_In_ const XMFLOAT4& outputColor)
+        : m_vertexBuffer(nullptr)
+        , m_indexBuffer(nullptr)
+        , m_constantBuffer(nullptr)
+        , m_textureRV(nullptr)
+        , m_samplerLinear(nullptr)
+        , m_vertexShader(nullptr)
+        , m_pixelShader(nullptr)
+        , m_textureFilePath(std::filesystem::path())
+        , m_outputColor(outputColor)
+        , m_bHasTextures(FALSE)
         , m_world(XMMatrixIdentity())
     {}
 
@@ -37,7 +67,7 @@ namespace library
                 ID3D11DeviceContext* pImmediateContext
                   The Direct3D context to set buffers
 
-      Modifies: [m_vertexBuffer, m_indexBuffer, m_constantBuffer,
+      Modifies: [m_vertexBuffer, m_indexBuffer, m_constantBuffer, 
                  m_textureRV, m_samplerLinear, m_world].
 
       Returns:  HRESULT
@@ -72,7 +102,7 @@ namespace library
             .ByteWidth = static_cast<UINT>(sizeof(WORD)) * GetNumIndices(),
             .Usage = D3D11_USAGE_DEFAULT,
             .BindFlags = D3D11_BIND_INDEX_BUFFER,
-            .CPUAccessFlags = 0u
+            .CPUAccessFlags = 0
         };
 
         InitData.pSysMem = getIndices();
@@ -81,33 +111,6 @@ namespace library
         if (FAILED(hr))
         {
             MessageBox(nullptr, L"Cannot create index buffer!", L"Error", NULL);
-            return hr;
-        }
-
-        // Load the texture
-        hr = CreateDDSTextureFromFile(pDevice, m_textureFilePath.filename().wstring().c_str(), nullptr, m_textureRV.GetAddressOf());
-        if (FAILED(hr))
-        {
-            MessageBox(nullptr, L"Cannot create DDS Texture from file!", L"Error", NULL);
-            return hr;
-        }
-
-        // Create sample state
-        D3D11_SAMPLER_DESC sampleDesc =
-        {
-            .Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR,
-            .AddressU = D3D11_TEXTURE_ADDRESS_WRAP,
-            .AddressV = D3D11_TEXTURE_ADDRESS_WRAP,
-            .AddressW = D3D11_TEXTURE_ADDRESS_WRAP,
-            .ComparisonFunc = D3D11_COMPARISON_NEVER,
-            .MinLOD = 0,
-            .MaxLOD = D3D11_FLOAT32_MAX
-        };
-
-        hr = pDevice->CreateSamplerState(&sampleDesc, m_samplerLinear.GetAddressOf());
-        if (FAILED(hr))
-        {
-            MessageBox(nullptr, L"Cannot create sample state!", L"Error", NULL);
             return hr;
         }
 
@@ -126,7 +129,33 @@ namespace library
             return hr;
         }
 
-        m_world = XMMatrixIdentity();
+        if (m_bHasTextures)
+        {
+            hr = CreateDDSTextureFromFile(pDevice, m_textureFilePath.filename().wstring().c_str(), nullptr, m_textureRV.GetAddressOf());
+            if (FAILED(hr))
+            {
+                MessageBox(nullptr, L"Cannot create DDS Texture from file!", L"Error", NULL);
+                return hr;
+            }
+
+            D3D11_SAMPLER_DESC sampleDesc =
+            {
+                .Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR,
+                .AddressU = D3D11_TEXTURE_ADDRESS_WRAP,
+                .AddressV = D3D11_TEXTURE_ADDRESS_WRAP,
+                .AddressW = D3D11_TEXTURE_ADDRESS_WRAP,
+                .ComparisonFunc = D3D11_COMPARISON_NEVER,
+                .MinLOD = 0,
+                .MaxLOD = D3D11_FLOAT32_MAX
+            };
+
+            hr = pDevice->CreateSamplerState(&sampleDesc, m_samplerLinear.GetAddressOf());
+            if (FAILED(hr))
+            {
+                MessageBox(nullptr, L"Cannot create sample state!", L"Error", NULL);
+                return hr;
+            }
+        }
 
         return hr;
     }
@@ -146,7 +175,6 @@ namespace library
     {
         m_vertexShader = vertexShader;
     }
-
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
       Method:   Renderable::SetPixelShader
@@ -255,7 +283,6 @@ namespace library
         return m_world;
     }
 
-
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
       Method:   Renderable::GetTextureResourceView
 
@@ -280,5 +307,64 @@ namespace library
     ComPtr<ID3D11SamplerState>& Renderable::GetSamplerState()
     {
         return m_samplerLinear;
+    }
+
+    /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+      Method:   Renderable::GetOutputColor
+
+      Summary:  Returns the output color
+
+      Returns:  const XMFLOAT4&
+                  The output color
+    M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
+    const XMFLOAT4& Renderable::GetOutputColor() const
+    {
+        return m_outputColor;
+    }
+
+    /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+      Method:   Renderable::HasTexture
+
+      Summary:  Returns whether the renderable has texture
+
+      Returns:  BOOL
+                  Whether the renderable has texture
+    M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
+    BOOL Renderable::HasTexture() const
+    {
+        return m_bHasTextures;
+    }
+
+    // Rotating
+    void Renderable::RotateX(_In_ FLOAT angle)
+    {
+        m_world *= XMMatrixRotationX(angle);
+    }
+
+    void Renderable::RotateY(_In_ FLOAT angle)
+    {
+        m_world *= XMMatrixRotationY(angle);
+    }
+
+    void Renderable::RotateZ(_In_ FLOAT angle)
+    {
+        m_world *= XMMatrixRotationZ(angle);
+    }
+
+    void Renderable::RotateRollPitchYaw(_In_ FLOAT roll, _In_ FLOAT pitch, _In_ FLOAT yaw)
+    {
+        m_world *= XMMatrixRotationRollPitchYaw(pitch, yaw, roll);
+    }
+
+    // Scaling
+    void Renderable::Scale(_In_ FLOAT scaleX, _In_ FLOAT scaleY, _In_ FLOAT scaleZ)
+    {
+        m_world *= XMMatrixScaling(scaleX, scaleY, scaleZ);
+    }
+
+    // Translating
+    void Renderable::Translate(_In_ const XMVECTOR& offset)
+    {
+        m_world *= XMMatrixTranslationFromVector(offset);
     }
 }
