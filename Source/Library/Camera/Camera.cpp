@@ -13,7 +13,7 @@ namespace library
                  m_eye, m_at, m_up, m_rotation, m_view].
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     Camera::Camera(_In_ const XMVECTOR& position)
-        : m_cbChangeOnCameraMovement(nullptr)
+        : m_cbChangeOnCameraMovement()
         , m_yaw(0.0f)
         , m_pitch(0.0f)
         , m_moveLeftRight(0.0f)
@@ -176,6 +176,8 @@ namespace library
             .Usage = D3D11_USAGE_DEFAULT,
             .BindFlags = D3D11_BIND_CONSTANT_BUFFER,
             .CPUAccessFlags = 0,
+            .MiscFlags = 0,
+            .StructureByteStride = 0
         };
 
         hr = device->CreateBuffer(&bd, nullptr, m_cbChangeOnCameraMovement.GetAddressOf());
@@ -204,9 +206,6 @@ namespace library
     {
         m_rotation = XMMatrixRotationRollPitchYaw(m_pitch, m_yaw, 0.0f);
 
-        m_at = XMVector3TransformCoord(DEFAULT_FORWARD, m_rotation);
-        m_at = XMVector3Normalize(m_at);
-
         XMMATRIX RotateYTempMatrix = XMMatrixRotationY(m_yaw);
 
         m_cameraForward = XMVector3TransformCoord(DEFAULT_FORWARD, RotateYTempMatrix);
@@ -217,9 +216,9 @@ namespace library
         m_eye += m_moveLeftRight * m_cameraRight;
         m_eye += m_moveUpDown * m_cameraUp;
 
-        m_at += m_eye;
+        m_at = m_eye + XMVector3TransformCoord(DEFAULT_FORWARD, m_rotation);
 
-        m_up = m_cameraUp;
+        m_up = XMVector3TransformCoord(DEFAULT_UP, m_rotation);
 
         m_moveBackForward = 0.0f;
         m_moveLeftRight = 0.0f;

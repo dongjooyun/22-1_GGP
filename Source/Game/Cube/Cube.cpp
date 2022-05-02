@@ -10,8 +10,7 @@
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 Cube::Cube(_In_ const std::filesystem::path& textureFilePath)
     : BaseCube(textureFilePath)
-{
-}
+{}
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
   Method:   Cube::Cube
@@ -23,8 +22,7 @@ Cube::Cube(_In_ const std::filesystem::path& textureFilePath)
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 Cube::Cube(_In_ const XMFLOAT4& outputColor)
     : BaseCube(outputColor)
-{
-}
+{}
 
 /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
   Method:   Cube::Update
@@ -38,5 +36,6 @@ Cube::Cube(_In_ const XMFLOAT4& outputColor)
 M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
 void Cube::Update(_In_ FLOAT deltaTime)
 {
+    UNREFERENCED_PARAMETER(deltaTime);
     // Does nothing
 }

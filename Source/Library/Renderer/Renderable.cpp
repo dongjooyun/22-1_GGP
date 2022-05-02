@@ -1,4 +1,5 @@
 #include "Renderer/Renderable.h"
+
 #include "Texture/DDSTextureLoader.h"
 
 namespace library
@@ -17,15 +18,15 @@ namespace library
                  m_world].
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     Renderable::Renderable(_In_ const std::filesystem::path& textureFilePath)
-        : m_vertexBuffer(nullptr)
-        , m_indexBuffer(nullptr)
-        , m_constantBuffer(nullptr)
-        , m_textureRV(nullptr)
-        , m_samplerLinear(nullptr)
-        , m_vertexShader(nullptr)
-        , m_pixelShader(nullptr)
+        : m_vertexBuffer()
+        , m_indexBuffer()
+        , m_constantBuffer()
+        , m_textureRV()
+        , m_samplerLinear()
+        , m_vertexShader()
+        , m_pixelShader()
         , m_textureFilePath(textureFilePath)
-        , m_outputColor(XMFLOAT4())
+        , m_outputColor()
         , m_bHasTextures(TRUE)
         , m_world(XMMatrixIdentity())
     {}
@@ -44,14 +45,14 @@ namespace library
                  m_world].
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     Renderable::Renderable(_In_ const XMFLOAT4& outputColor)
-        : m_vertexBuffer(nullptr)
-        , m_indexBuffer(nullptr)
-        , m_constantBuffer(nullptr)
-        , m_textureRV(nullptr)
-        , m_samplerLinear(nullptr)
-        , m_vertexShader(nullptr)
-        , m_pixelShader(nullptr)
-        , m_textureFilePath(std::filesystem::path())
+        : m_vertexBuffer()
+        , m_indexBuffer()
+        , m_constantBuffer()
+        , m_textureRV()
+        , m_samplerLinear()
+        , m_vertexShader()
+        , m_pixelShader()
+        , m_textureFilePath()
         , m_outputColor(outputColor)
         , m_bHasTextures(FALSE)
         , m_world(XMMatrixIdentity())
@@ -77,17 +78,21 @@ namespace library
     {
         HRESULT hr = S_OK;
 
+        // Create the vertex buffer
         D3D11_BUFFER_DESC bd =
         {
-            .ByteWidth = sizeof(SimpleVertex) * GetNumVertices(),
+            .ByteWidth = static_cast<UINT>(sizeof(SimpleVertex)) * GetNumVertices(),
             .Usage = D3D11_USAGE_DEFAULT,
             .BindFlags = D3D11_BIND_VERTEX_BUFFER,
-            .CPUAccessFlags = 0
+            .CPUAccessFlags = 0, 
+            .MiscFlags = 0
         };
 
         D3D11_SUBRESOURCE_DATA InitData =
         {
-            .pSysMem = getVertices()
+            .pSysMem = getVertices(),
+            .SysMemPitch = 0,
+            .SysMemSlicePitch = 0
         };
 
         hr = pDevice->CreateBuffer(&bd, &InitData, m_vertexBuffer.GetAddressOf());
@@ -97,15 +102,22 @@ namespace library
             return hr;
         }
 
+        // Create the index buffer
         bd =
         {
             .ByteWidth = static_cast<UINT>(sizeof(WORD)) * GetNumIndices(),
             .Usage = D3D11_USAGE_DEFAULT,
             .BindFlags = D3D11_BIND_INDEX_BUFFER,
-            .CPUAccessFlags = 0
+            .CPUAccessFlags = 0, 
+            .MiscFlags = 0
         };
 
-        InitData.pSysMem = getIndices();
+        InitData =
+        {
+            .pSysMem = getIndices(),
+            .SysMemPitch = 0,
+            .SysMemSlicePitch = 0
+        };
 
         hr = pDevice->CreateBuffer(&bd, &InitData, m_indexBuffer.GetAddressOf());
         if (FAILED(hr))
@@ -114,15 +126,29 @@ namespace library
             return hr;
         }
 
+        // Create the constant buffer
         bd =
         {
             .ByteWidth = sizeof(CBChangesEveryFrame),
             .Usage = D3D11_USAGE_DEFAULT,
             .BindFlags = D3D11_BIND_CONSTANT_BUFFER,
-            .CPUAccessFlags = 0
+            .CPUAccessFlags = 0,
+            .MiscFlags = 0,
+            .StructureByteStride = 0
         };
 
-        hr = pDevice->CreateBuffer(&bd, nullptr, m_constantBuffer.GetAddressOf());
+        CBChangesEveryFrame cb = {
+            .World = XMMatrixTranspose(m_world),
+            .OutputColor = m_outputColor
+        };
+
+        D3D11_SUBRESOURCE_DATA cData = {
+            .pSysMem = &cb,
+            .SysMemPitch = 0,
+            .SysMemSlicePitch = 0
+        };
+
+        hr = pDevice->CreateBuffer(&bd, &cData, m_constantBuffer.GetAddressOf());
         if (FAILED(hr))
         {
             MessageBox(nullptr, L"Cannot create constant buffer!", L"Error", NULL);
@@ -131,13 +157,20 @@ namespace library
 
         if (m_bHasTextures)
         {
-            hr = CreateDDSTextureFromFile(pDevice, m_textureFilePath.filename().wstring().c_str(), nullptr, m_textureRV.GetAddressOf());
+            // Create texture resource device
+            hr = CreateDDSTextureFromFile(
+                pDevice, 
+                m_textureFilePath.filename().wstring().c_str(), 
+                nullptr, 
+                m_textureRV.GetAddressOf()
+            );
             if (FAILED(hr))
             {
                 MessageBox(nullptr, L"Cannot create DDS Texture from file!", L"Error", NULL);
                 return hr;
             }
 
+            // Create sampler state
             D3D11_SAMPLER_DESC sampleDesc =
             {
                 .Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR,
@@ -335,34 +368,81 @@ namespace library
         return m_bHasTextures;
     }
 
-    // Rotating
+    /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+      Method:   Renderable::RotateX
+      Summary:  Rotates around the x-axis
+      Args:     FLOAT angle
+                  Angle of rotation around the x-axis, in radians
+      Modifies: [m_world].
+    M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     void Renderable::RotateX(_In_ FLOAT angle)
     {
         m_world *= XMMatrixRotationX(angle);
     }
 
+    /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+      Method:   Renderable::RotateY
+      Summary:  Rotates around the y-axis
+      Args:     FLOAT angle
+                  Angle of rotation around the y-axis, in radians
+      Modifies: [m_world].
+    M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     void Renderable::RotateY(_In_ FLOAT angle)
     {
         m_world *= XMMatrixRotationY(angle);
     }
 
+    /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+      Method:   Renderable::RotateZ
+      Summary:  Rotates around the z-axis
+      Args:     FLOAT angle
+                  Angle of rotation around the z-axis, in radians
+      Modifies: [m_world].
+    M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     void Renderable::RotateZ(_In_ FLOAT angle)
     {
         m_world *= XMMatrixRotationZ(angle);
     }
 
+    /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+      Method:   Renderable::RotateRollPitchYaw
+      Summary:  Rotates based on a given pitch, yaw, and roll (Euler angles)
+      Args:     FLOAT pitch
+                  Angle of rotation around the x-axis, in radians
+                FLOAT yaw
+                  Angle of rotation around the y-axis, in radians
+                FLOAT roll
+                  Angle of rotation around the z-axis, in radians
+      Modifies: [m_world].
+    M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     void Renderable::RotateRollPitchYaw(_In_ FLOAT roll, _In_ FLOAT pitch, _In_ FLOAT yaw)
     {
         m_world *= XMMatrixRotationRollPitchYaw(pitch, yaw, roll);
     }
 
-    // Scaling
+    /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+      Method:   Renderable::Scale
+      Summary:  Scales along the x-axis, y-axis, and z-axis
+      Args:     FLOAT scaleX
+                  Scaling factor along the x-axis.
+                FLOAT scaleY
+                  Scaling factor along the y-axis.
+                FLOAT scaleZ
+                  Scaling factor along the z-axis.
+      Modifies: [m_world].
+    M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     void Renderable::Scale(_In_ FLOAT scaleX, _In_ FLOAT scaleY, _In_ FLOAT scaleZ)
     {
         m_world *= XMMatrixScaling(scaleX, scaleY, scaleZ);
     }
 
-    // Translating
+    /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+      Method:   Renderable::Translate
+      Summary:  Translates matrix from a vector
+      Args:     const XMVECTOR& offset
+                  3D vector describing the translations along the x-axis, y-axis, and z-axis
+      Modifies: [m_world].
+    M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     void Renderable::Translate(_In_ const XMVECTOR& offset)
     {
         m_world *= XMMatrixTranslationFromVector(offset);
