@@ -467,7 +467,7 @@ namespace library
     {
         if (index >= NUM_LIGHTS)
         {
-            MessageBox(nullptr, L"Cannot add pointLight!", L"Error", NULL);
+            MessageBox(nullptr, L"Cannot add point light!", L"Error", NULL);
             return E_FAIL;
         }
 
