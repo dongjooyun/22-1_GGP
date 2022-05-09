@@ -25,6 +25,9 @@
     <Filter Include="Source Files\Light">
       <UniqueIdentifier>{f918d562-8db1-4c51-ae90-092f8ce8ab48}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Shaders">
+      <UniqueIdentifier>{df216825-bce5-4a03-b56c-545a64cc34a2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -62,5 +65,21 @@
     <ClInclude Include="Light\RotatingPointLight.h">
       <Filter>Header Files\Light</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\PhongShaders.fxh">
+      <Filter>Header Files\Shaders</Filter>
+    </None>
+    <None Include="Shaders\Shaders.fxh">
+      <Filter>Header Files\Shaders</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Shaders\PS.hlsl">
+      <Filter>Header Files\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\VS.hlsl">
+      <Filter>Header Files\Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

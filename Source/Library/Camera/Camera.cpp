@@ -16,20 +16,20 @@ namespace library
         : m_cbChangeOnCameraMovement()
         , m_yaw(0.0f)
         , m_pitch(0.0f)
-        , m_moveLeftRight(0.0f)
-        , m_moveBackForward(0.0f)
-        , m_moveUpDown(0.0f)
-        , m_travelSpeed(0.0005f)
-        , m_rotationSpeed(0.0005f)
+        , m_moveLeftRight()
+        , m_moveBackForward()
+        , m_moveUpDown()
+        , m_travelSpeed(5.0f)
+        , m_rotationSpeed(0.5f)
         , m_padding()
         , m_cameraForward(DEFAULT_FORWARD)
         , m_cameraRight(DEFAULT_RIGHT)
         , m_cameraUp(DEFAULT_UP)
         , m_eye(position)
-        , m_at(XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f))
-        , m_up(XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f))
+        , m_at()
+        , m_up()
         , m_rotation()
-        , m_view(XMMatrixLookAtLH(m_eye, m_at, m_up))
+        , m_view()
     {}
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
@@ -153,7 +153,9 @@ namespace library
             m_moveUpDown -= m_travelSpeed * deltaTime;
         }
 
-        Update(deltaTime);
+        WCHAR szDebugMessage[128];
+        swprintf_s(szDebugMessage, L"frontback: %f, leftright: %f, updown: %f\n", m_moveBackForward, m_moveLeftRight, m_moveUpDown);
+        OutputDebugString(szDebugMessage);
     }
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M

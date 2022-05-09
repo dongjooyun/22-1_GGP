@@ -146,14 +146,6 @@ copy "$(TargetDir)" "$(SolutionDir)..\Library\x64\Release"</Command>
   <ItemGroup>
     <Image Include="directx.ico" />
   </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="..\Game\Shaders\PS.hlsl" />
-    <FxCompile Include="..\Game\Shaders\VS.hlsl" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\Game\Shaders\PhongShaders.fxh" />
-    <None Include="..\Game\Shaders\Shaders.fxh" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

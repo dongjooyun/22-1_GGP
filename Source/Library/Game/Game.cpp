@@ -61,9 +61,8 @@ namespace library
     {
         LARGE_INTEGER startTime;
         LARGE_INTEGER stopTime;
+        LARGE_INTEGER elapsedTime;
         LARGE_INTEGER frequency;
-
-        FLOAT elapsedTime;
 
         QueryPerformanceFrequency(&frequency);
         QueryPerformanceCounter(&startTime);
@@ -80,12 +79,16 @@ namespace library
             {
                 QueryPerformanceCounter(&stopTime);
 
-                elapsedTime = static_cast<FLOAT>(stopTime.QuadPart - startTime.QuadPart);
-                elapsedTime /= static_cast<FLOAT>(frequency.QuadPart);
+                elapsedTime.QuadPart = stopTime.QuadPart - startTime.QuadPart;
+                elapsedTime.QuadPart *= 1000000;
+                elapsedTime.QuadPart /= static_cast<FLOAT>(frequency.QuadPart);
 
-                m_renderer->HandleInput(m_mainWindow->GetDirections(), m_mainWindow->GetMouseRelativeMovement(), elapsedTime);
+                QueryPerformanceFrequency(&frequency);
+                QueryPerformanceCounter(&startTime);
+
+                m_renderer->HandleInput(m_mainWindow->GetDirections(), m_mainWindow->GetMouseRelativeMovement(), static_cast<FLOAT>(elapsedTime.QuadPart) / 1000000.0f);
                 m_mainWindow->ResetMouseMovement();
-                m_renderer->Update(elapsedTime);
+                m_renderer->Update(static_cast<FLOAT>(elapsedTime.QuadPart) / 1000000.0f);
                 m_renderer->Render();
             }
         }
