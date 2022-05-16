@@ -152,10 +152,6 @@ namespace library
         {
             m_moveUpDown -= m_travelSpeed * deltaTime;
         }
-
-        WCHAR szDebugMessage[128];
-        swprintf_s(szDebugMessage, L"frontback: %f, leftright: %f, updown: %f\n", m_moveBackForward, m_moveLeftRight, m_moveUpDown);
-        OutputDebugString(szDebugMessage);
     }
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M

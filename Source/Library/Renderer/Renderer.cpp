@@ -11,7 +11,7 @@ namespace library
                  m_immediateContext, m_immediateContext1, m_swapChain,
                  m_swapChain1, m_renderTargetView, m_depthStencil,
                  m_depthStencilView, m_cbChangeOnResize, m_camera,
-                 m_projection, m_renderables, m_vertexShaders, 
+                 m_projection, m_renderables, m_vertexShaders,
                  m_pixelShaders].
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     Renderer::Renderer()
@@ -27,11 +27,9 @@ namespace library
         , m_depthStencil()
         , m_depthStencilView()
         , m_cbChangeOnResize()
-        , m_cbLights()
         , m_camera(XMVectorSet(0.0f, 0.0f, -5.0f, 0.0f))
         , m_projection()
         , m_renderables()
-        , m_aPointLights()
         , m_vertexShaders()
         , m_pixelShaders()
     {}
@@ -46,8 +44,8 @@ namespace library
 
       Modifies: [m_d3dDevice, m_featureLevel, m_immediateContext,
                  m_d3dDevice1, m_immediateContext1, m_swapChain1,
-                 m_swapChain, m_renderTargetView, m_cbChangeOnResize, 
-                 m_projection, m_cbLights, m_camera, m_vertexShaders, 
+                 m_swapChain, m_renderTargetView, m_cbChangeOnResize,
+                 m_projection, m_cbLights, m_camera, m_vertexShaders,
                  m_pixelShaders, m_renderables].
 
       Returns:  HRESULT
@@ -113,29 +111,29 @@ namespace library
         {
             m_driverType = driverTypes[driverTypeIndex];
             hr = D3D11CreateDevice(
-                nullptr, 
-                m_driverType, 
-                nullptr, 
-                createDeviceFlags, 
-                featureLevels, 
+                nullptr,
+                m_driverType,
+                nullptr,
+                createDeviceFlags,
+                featureLevels,
                 numFeatureLevels,
                 D3D11_SDK_VERSION,
-                m_d3dDevice.GetAddressOf(), 
-                &m_featureLevel, 
+                m_d3dDevice.GetAddressOf(),
+                &m_featureLevel,
                 m_immediateContext.GetAddressOf()
             );
             if (hr == E_INVALIDARG)
             {
                 hr = D3D11CreateDevice(
-                    nullptr, 
-                    m_driverType, 
-                    nullptr, 
-                    createDeviceFlags, 
-                    &featureLevels[1], 
+                    nullptr,
+                    m_driverType,
+                    nullptr,
+                    createDeviceFlags,
+                    &featureLevels[1],
                     numFeatureLevels - 1,
-                    D3D11_SDK_VERSION, 
-                    m_d3dDevice.GetAddressOf(), 
-                    &m_featureLevel, 
+                    D3D11_SDK_VERSION,
+                    m_d3dDevice.GetAddressOf(),
+                    &m_featureLevel,
                     m_immediateContext.GetAddressOf()
                 );
             }
@@ -156,10 +154,12 @@ namespace library
         {
             // Create DXGI device object
             ComPtr<IDXGIDevice> dxgiDevice = nullptr;
-            if (SUCCEEDED(m_d3dDevice.As(&dxgiDevice)))
+            hr = m_d3dDevice.As(&dxgiDevice);
+            if (SUCCEEDED(hr))
             {
                 ComPtr<IDXGIAdapter> adapter = nullptr;
-                if (SUCCEEDED(dxgiDevice->GetAdapter(&adapter)))
+                hr = dxgiDevice->GetAdapter(&adapter);
+                if (SUCCEEDED(hr))
                 {
                     hr = adapter->GetParent(IID_PPV_ARGS(dxgiFactory.GetAddressOf()));
                     adapter.Reset();
@@ -175,9 +175,11 @@ namespace library
 
 #pragma region CreateSwapChain
         ComPtr<IDXGIFactory2> dxgiFactory2 = nullptr;
-        if (SUCCEEDED(dxgiFactory.As(&dxgiFactory2)))
+        hr = dxgiFactory.As(&dxgiFactory2);
+        if (SUCCEEDED(hr))
         {
-            if (SUCCEEDED(m_d3dDevice.As(&m_d3dDevice1)))
+            hr = m_d3dDevice.As(&m_d3dDevice1);
+            if (SUCCEEDED(hr))
             {
                 m_immediateContext.As(&m_immediateContext1);
             }
@@ -197,11 +199,11 @@ namespace library
             };
 
             hr = dxgiFactory2->CreateSwapChainForHwnd(
-                m_d3dDevice.Get(), 
-                hWnd, 
-                &sd, 
-                nullptr, 
-                nullptr, 
+                m_d3dDevice.Get(),
+                hWnd,
+                &sd,
+                nullptr,
+                nullptr,
                 m_swapChain1.GetAddressOf()
             );
             if (SUCCEEDED(hr))
@@ -238,8 +240,8 @@ namespace library
             };
 
             hr = dxgiFactory->CreateSwapChain(
-                m_d3dDevice.Get(), 
-                &sd, 
+                m_d3dDevice.Get(),
+                &sd,
                 m_swapChain.GetAddressOf()
             );
         }
@@ -251,7 +253,7 @@ namespace library
         }
 #pragma endregion
 
-#pragma region CreateDepthStencilBuffer
+#pragma region CreateRenderTargetView        
         ComPtr< ID3D11Texture2D> pBackBuffer = nullptr;
         hr = m_swapChain->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
         if (FAILED(hr))
@@ -266,8 +268,10 @@ namespace library
             MessageBox(nullptr, L"Cannot create render target view!", L"Error", NULL);
             return hr;
         }
+#pragma endregion
 
-        // Depth Stencil
+#pragma region CreateDepthStencilBuffer
+        // Depth Stencil texture
         D3D11_TEXTURE2D_DESC descDepth =
         {
             .Width = width,
@@ -293,7 +297,7 @@ namespace library
             return hr;
         }
 
-        //Depth Stencil View
+        // Depth Stencil View
         D3D11_DEPTH_STENCIL_VIEW_DESC descDSV =
         {
             .Format = descDepth.Format,
@@ -311,7 +315,7 @@ namespace library
         m_immediateContext->OMSetRenderTargets(1, m_renderTargetView.GetAddressOf(), m_depthStencilView.Get());
 #pragma endregion
 
-#pragma region CreateViewport
+#pragma region SetUpViewport
         D3D11_VIEWPORT vp =
         {
             .TopLeftX = 0.0f,
@@ -326,6 +330,7 @@ namespace library
 #pragma endregion
 
 #pragma region CreateConstantBufferChangeOnResize
+        // Initialize projection matrix
         m_projection = XMMatrixPerspectiveFovLH(XM_PIDIV2, width / static_cast<FLOAT>(height), 0.01f, 100.0f);
 
         D3D11_BUFFER_DESC cBufferDesc = {
@@ -334,7 +339,6 @@ namespace library
             .BindFlags = D3D11_BIND_CONSTANT_BUFFER,
             .CPUAccessFlags = 0,
             .MiscFlags = 0,
-            .StructureByteStride = 0
         };
 
         CBChangeOnResize cbChangeOnResize =
@@ -348,8 +352,12 @@ namespace library
             .SysMemSlicePitch = 0
         };
 
-        hr = m_d3dDevice->CreateBuffer(&cBufferDesc, &cData, &m_cbChangeOnResize);
-        if (FAILED(hr)) return hr;
+        hr = m_d3dDevice->CreateBuffer(&cBufferDesc, &cData, m_cbChangeOnResize.GetAddressOf());
+        if (FAILED(hr))
+        {
+            MessageBox(nullptr, L"Cannot create constant buffer!", L"Error", NULL);
+            return hr;
+        }
 
         m_immediateContext->VSSetConstantBuffers(1, 1, m_cbChangeOnResize.GetAddressOf());
 #pragma endregion
@@ -361,7 +369,6 @@ namespace library
             .BindFlags = D3D11_BIND_CONSTANT_BUFFER,
             .CPUAccessFlags = 0,
             .MiscFlags = 0,
-            .StructureByteStride = 0
         };
 
         CBLights cbLights = { };
@@ -373,7 +380,11 @@ namespace library
         };
 
         hr = m_d3dDevice->CreateBuffer(&cbLightsDesc, &cbLightsData, &m_cbLights);
-        if (FAILED(hr)) return hr;
+        if (FAILED(hr))
+        {
+            MessageBox(nullptr, L"Cannot create light constant buffer!", L"Error", NULL);
+            return hr;
+        }
 
         m_immediateContext->VSSetConstantBuffers(3, 1, m_cbLights.GetAddressOf());
         m_immediateContext->PSSetConstantBuffers(3, 1, m_cbLights.GetAddressOf());
@@ -442,10 +453,11 @@ namespace library
             MessageBox(nullptr, L"Cannot add renderable!", L"Error", NULL);
             return E_FAIL;
         }
-
-        m_renderables.insert({ pszRenderableName, renderable });
-
-        return S_OK;
+        else
+        {
+            m_renderables.insert({ pszRenderableName, renderable });
+            return S_OK;
+        }
     }
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
@@ -470,10 +482,11 @@ namespace library
             MessageBox(nullptr, L"Cannot add point light!", L"Error", NULL);
             return E_FAIL;
         }
-
-        m_aPointLights[index] = pPointLight;
-
-        return S_OK;
+        else
+        {
+            m_aPointLights[index] = pPointLight;
+            return S_OK;
+        }
     }
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
@@ -498,10 +511,11 @@ namespace library
             MessageBox(nullptr, L"Cannot add vertex shader!", L"Error", NULL);
             return E_FAIL;
         }
-
-        m_vertexShaders.insert({ pszVertexShaderName, vertexShader });
-
-        return S_OK;
+        else
+        {
+            m_vertexShaders.insert({ pszVertexShaderName, vertexShader });
+            return S_OK;
+        }
     }
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
@@ -526,10 +540,11 @@ namespace library
             MessageBox(nullptr, L"Cannot add pixel shader!", L"Error", NULL);
             return E_FAIL;
         }
-
-        m_pixelShaders.insert({ pszPixelShaderName, pixelShader });
-
-        return S_OK;
+        else
+        {
+            m_pixelShaders.insert({ pszPixelShaderName, pixelShader });
+            return S_OK;
+        }
     }
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
@@ -544,9 +559,17 @@ namespace library
 
       Modifies: [m_camera].
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-    void Renderer::HandleInput(_In_ const DirectionsInput& directions, _In_ const MouseRelativeMovement& mouseRelativeMovement, _In_ FLOAT deltaTime)
+    void Renderer::HandleInput(
+        _In_ const DirectionsInput& directions,
+        _In_ const MouseRelativeMovement& mouseRelativeMovement,
+        _In_ FLOAT deltaTime
+    )
     {
-        m_camera.HandleInput(directions, mouseRelativeMovement, deltaTime);
+        m_camera.HandleInput(
+            directions,
+            mouseRelativeMovement,
+            deltaTime
+        );
     }
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
@@ -582,7 +605,7 @@ namespace library
         // Clear the backbuffer
         m_immediateContext->ClearRenderTargetView(m_renderTargetView.Get(), Colors::MidnightBlue);
 
-        // Clear the depth buffer to 1.0
+        // Clear the depth buffer to 1.0 (max depth)
         m_immediateContext->ClearDepthStencilView(m_depthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 
         // Create camera constant buffer and update
@@ -596,10 +619,10 @@ namespace library
 
         m_immediateContext->UpdateSubresource(
             m_camera.GetConstantBuffer().Get(),
-            0, 
-            nullptr, 
-            &cbChangeOnCameraMovement, 
-            0, 
+            0,
+            nullptr,
+            &cbChangeOnCameraMovement,
+            0,
             0
         );
         m_immediateContext->VSSetConstantBuffers(0, 1, m_camera.GetConstantBuffer().GetAddressOf());
@@ -618,11 +641,11 @@ namespace library
         }
 
         m_immediateContext->UpdateSubresource(
-            m_cbLights.Get(), 
-            0, 
-            nullptr, 
-            &cbLights, 
-            0, 
+            m_cbLights.Get(),
+            0,
+            nullptr,
+            &cbLights,
+            0,
             0
         );
         m_immediateContext->PSSetConstantBuffers(3, 1, m_cbLights.GetAddressOf());
@@ -633,15 +656,15 @@ namespace library
             auto& renderable = pair.second;
 
             // Set the vertex buffer
-            UINT Stride = sizeof(SimpleVertex);
-            UINT Offset = 0;
+            UINT stride = sizeof(SimpleVertex);
+            UINT offset = 0;
 
             m_immediateContext->IASetVertexBuffers(
-                0, 
-                1, 
-                renderable->GetVertexBuffer().GetAddressOf(), 
-                &Stride, 
-                &Offset
+                0,
+                1,
+                renderable->GetVertexBuffer().GetAddressOf(),
+                &stride,
+                &offset
             );
 
             //Set the index buffer
@@ -658,11 +681,11 @@ namespace library
             };
 
             m_immediateContext->UpdateSubresource(
-                renderable->GetConstantBuffer().Get(), 
-                0, 
-                nullptr, 
-                &cbChangesEveryFrame, 
-                0, 
+                renderable->GetConstantBuffer().Get(),
+                0,
+                nullptr,
+                &cbChangesEveryFrame,
+                0,
                 0
             );
 
@@ -677,18 +700,27 @@ namespace library
             if (renderable->HasTexture())
             {
                 // Set texture resource view of the renderable into the pixel shader
-                m_immediateContext->PSSetShaderResources(0, 1, renderable->GetTextureResourceView().GetAddressOf());
-                // Set sampler state of the renderable into the pixel shader
-                m_immediateContext->PSSetSamplers(0, 1, renderable->GetSamplerState().GetAddressOf());
-            }
-            // Render
-            m_immediateContext->DrawIndexed(renderable->GetNumIndices(), 0, 0);
-        }
-        //Present
-        m_swapChain->Present(0, 0);
+                for (UINT i = 0; i < renderable->GetNumMeshes(); ++i)
+                {
+                    UINT materialIndex = renderable->GetMesh(i).uMaterialIndex;
+                    m_immediateContext->PSSetShaderResources(0, 1, renderable->GetMaterial(materialIndex).pDiffuse->GetTextureResourceView().GetAddressOf());
+                    // Set sampler state of the renderable into the pixel shader
+                    m_immediateContext->PSSetSamplers(0, 1, renderable->GetMaterial(materialIndex).pDiffuse->GetSamplerState().GetAddressOf());
 
-        // Set Render Target View again (Present call for DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL unbinds backbuffer 0)
-        //m_immediateContext->OMSetRenderTargets(1, m_renderTargetView.GetAddressOf(), m_depthStencilView.Get());
+                    // Draw
+                    m_immediateContext->DrawIndexed(renderable->GetMesh(i).uNumIndices,
+                        renderable->GetMesh(i).uBaseIndex,
+                        renderable->GetMesh(i).uBaseVertex);
+                }
+            }
+            else
+            {
+                // Draw
+                m_immediateContext->DrawIndexed(renderable->GetNumIndices(), 0, 0);
+            }
+        }
+        // Present
+        m_swapChain->Present(0, 0);
     }
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
@@ -708,11 +740,11 @@ namespace library
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     HRESULT Renderer::SetVertexShaderOfRenderable(_In_ PCWSTR pszRenderableName, _In_ PCWSTR pszVertexShaderName)
     {
-        if (m_renderables.find(pszRenderableName) == m_renderables.end())
+        /*if (m_renderables.find(pszRenderableName) == m_renderables.end())
         {
             MessageBox(nullptr, L"Cannot set vertex shader of renderable(R)!", L"Error", NULL);
             return E_FAIL;
-        }
+        }*/
 
         if (m_vertexShaders.find(pszVertexShaderName) == m_vertexShaders.end())
         {
@@ -742,11 +774,11 @@ namespace library
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     HRESULT Renderer::SetPixelShaderOfRenderable(_In_ PCWSTR pszRenderableName, _In_ PCWSTR pszPixelShaderName)
     {
-        if (m_renderables.find(pszRenderableName) == m_renderables.end())
+        /*if (m_renderables.find(pszRenderableName) == m_renderables.end())
         {
             MessageBox(nullptr, L"Cannot set pixel shader of renderable(R)!", L"Error", NULL);
             return E_FAIL;
-        }
+        }*/
 
         if (m_pixelShaders.find(pszPixelShaderName) == m_pixelShaders.end())
         {

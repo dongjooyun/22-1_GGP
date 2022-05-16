@@ -1,8 +1,8 @@
 /*+===================================================================
   File:      ROTATINGCUBE.H
 
-  Summary:  RotatingCube header file contains declarations of 
-            RotatingCube class used for the lab samples of Game 
+  Summary:  RotatingCube header file contains declarations of
+            RotatingCube class used for the lab samples of Game
             Graphics Programming course.
 
   Classes: RotatingCube
@@ -18,7 +18,6 @@
 class RotatingCube : public BaseCube
 {
 public:
-    RotatingCube(const std::filesystem::path& textureFilePath);
     RotatingCube(const XMFLOAT4& outputColor);
     RotatingCube(const RotatingCube& other) = delete;
     RotatingCube(RotatingCube&& other) = delete;
