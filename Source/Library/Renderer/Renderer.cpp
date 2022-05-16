@@ -16,23 +16,26 @@ namespace library
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     Renderer::Renderer()
         : m_driverType(D3D_DRIVER_TYPE_NULL)
-        , m_featureLevel(D3D_FEATURE_LEVEL_11_1)
-        , m_d3dDevice()
-        , m_d3dDevice1()
-        , m_immediateContext()
-        , m_immediateContext1()
-        , m_swapChain()
-        , m_swapChain1()
-        , m_renderTargetView()
-        , m_depthStencil()
-        , m_depthStencilView()
-        , m_cbChangeOnResize()
-        , m_camera(XMVectorSet(0.0f, 0.0f, -5.0f, 0.0f))
-        , m_projection()
-        , m_renderables()
-        , m_vertexShaders()
-        , m_pixelShaders()
-    {}
+        , m_featureLevel(D3D_FEATURE_LEVEL_11_0)
+        , m_d3dDevice(nullptr)
+        , m_d3dDevice1(nullptr)
+        , m_immediateContext(nullptr)
+        , m_immediateContext1(nullptr)
+        , m_swapChain(nullptr)
+        , m_swapChain1(nullptr)
+        , m_renderTargetView(nullptr)
+        , m_depthStencil(nullptr)
+        , m_depthStencilView(nullptr)
+        , m_cbChangeOnResize(nullptr)
+        , m_camera(Camera(XMVectorSet(0.0f, 1.0f, -10.0f, 0.0f)))
+        , m_projection(XMMatrixIdentity())
+        , m_renderables(std::unordered_map<std::wstring, std::shared_ptr<Renderable>>())
+        , m_vertexShaders(std::unordered_map<std::wstring, std::shared_ptr<VertexShader>>())
+        , m_pixelShaders(std::unordered_map<std::wstring, std::shared_ptr<PixelShader>>())
+        , m_scenes(std::unordered_map<std::wstring, std::shared_ptr<Scene>>())
+        , m_cbLights(nullptr)
+        , m_pszMainSceneName(L"")
+    { }
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
       Method:   Renderer::Initialize
@@ -54,134 +57,113 @@ namespace library
     HRESULT Renderer::Initialize(_In_ HWND hWnd)
     {
         HRESULT hr = S_OK;
-#pragma region SettingWindow
+
         RECT rc;
         GetClientRect(hWnd, &rc);
         UINT width = rc.right - static_cast<UINT>(rc.left);
         UINT height = rc.bottom - static_cast<UINT>(rc.top);
 
-        POINT LeftTop =
+        //  Clip cursor to screen
+        POINT p1 =
         {
             .x = rc.left,
             .y = rc.top - 30
         };
-        POINT RightBottom =
+        POINT p2 =
         {
             .x = rc.right,
             .y = rc.bottom
         };
 
-        ClientToScreen(hWnd, &LeftTop);
-        ClientToScreen(hWnd, &RightBottom);
+        ClientToScreen(hWnd, &p1);
+        ClientToScreen(hWnd, &p2);
 
-        rc =
-        {
-            .left = LeftTop.x,
-            .top = LeftTop.y,
-            .right = RightBottom.x,
-            .bottom = RightBottom.y
-        };
+        rc.left = p1.x;
+        rc.top = p1.y;
+        rc.right = p2.x;
+        rc.bottom = p2.y;
 
         ClipCursor(&rc);
-#pragma endregion
 
-#pragma region CreateD3D11Device
-        UINT createDeviceFlags = 0;
+        UINT createDeviceFlags = 0u;
 #ifdef _DEBUG
         createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
+
         D3D_DRIVER_TYPE driverTypes[] =
         {
             D3D_DRIVER_TYPE_HARDWARE,
             D3D_DRIVER_TYPE_WARP,
             D3D_DRIVER_TYPE_REFERENCE,
         };
-
         UINT numDriverTypes = ARRAYSIZE(driverTypes);
 
         D3D_FEATURE_LEVEL featureLevels[] =
         {
             D3D_FEATURE_LEVEL_11_1,
             D3D_FEATURE_LEVEL_11_0,
+            D3D_FEATURE_LEVEL_10_1,
+            D3D_FEATURE_LEVEL_10_0,
         };
-
         UINT numFeatureLevels = ARRAYSIZE(featureLevels);
 
         for (UINT driverTypeIndex = 0; driverTypeIndex < numDriverTypes; driverTypeIndex++)
         {
             m_driverType = driverTypes[driverTypeIndex];
-            hr = D3D11CreateDevice(
-                nullptr,
-                m_driverType,
-                nullptr,
-                createDeviceFlags,
-                featureLevels,
-                numFeatureLevels,
-                D3D11_SDK_VERSION,
-                m_d3dDevice.GetAddressOf(),
-                &m_featureLevel,
-                m_immediateContext.GetAddressOf()
-            );
+            hr = D3D11CreateDevice(nullptr, m_driverType, nullptr, createDeviceFlags, featureLevels, numFeatureLevels,
+                D3D11_SDK_VERSION, m_d3dDevice.GetAddressOf(), &m_featureLevel, m_immediateContext.GetAddressOf());
+
             if (hr == E_INVALIDARG)
             {
-                hr = D3D11CreateDevice(
-                    nullptr,
-                    m_driverType,
-                    nullptr,
-                    createDeviceFlags,
-                    &featureLevels[1],
-                    numFeatureLevels - 1,
-                    D3D11_SDK_VERSION,
-                    m_d3dDevice.GetAddressOf(),
-                    &m_featureLevel,
-                    m_immediateContext.GetAddressOf()
-                );
+                hr = D3D11CreateDevice(nullptr, m_driverType, nullptr, createDeviceFlags, &featureLevels[1], numFeatureLevels - 1, D3D11_SDK_VERSION, m_d3dDevice.GetAddressOf(), &m_featureLevel, m_immediateContext.GetAddressOf());
             }
+
             if (SUCCEEDED(hr))
             {
                 break;
             }
         }
+
         if (FAILED(hr))
         {
-            MessageBox(nullptr, L"Cannot create D3D11device!", L"Error", NULL);
             return hr;
         }
-#pragma endregion
 
-        // Set DXGI factory
+        // Obtain DXGI factory from device (since we used nullptr for pAdapter above)
         ComPtr<IDXGIFactory1> dxgiFactory = nullptr;
         {
-            // Create DXGI device object
             ComPtr<IDXGIDevice> dxgiDevice = nullptr;
             hr = m_d3dDevice.As(&dxgiDevice);
+
             if (SUCCEEDED(hr))
             {
                 ComPtr<IDXGIAdapter> adapter = nullptr;
-                hr = dxgiDevice->GetAdapter(&adapter);
+                hr = dxgiDevice->GetAdapter(adapter.GetAddressOf());
+
                 if (SUCCEEDED(hr))
                 {
-                    hr = adapter->GetParent(IID_PPV_ARGS(dxgiFactory.GetAddressOf()));
-                    adapter.Reset();
+                    hr = adapter->GetParent(__uuidof(IDXGIFactory1), reinterpret_cast<void**>(dxgiFactory.GetAddressOf()));
                 }
-                dxgiDevice.Reset();
             }
         }
+
         if (FAILED(hr))
         {
-            MessageBox(nullptr, L"Cannot set DXGIfactory!", L"Error", NULL);
             return hr;
         }
 
-#pragma region CreateSwapChain
+        // Create swap chain
         ComPtr<IDXGIFactory2> dxgiFactory2 = nullptr;
         hr = dxgiFactory.As(&dxgiFactory2);
-        if (SUCCEEDED(hr))
+
+        if (dxgiFactory2)
         {
+            // DirectX 11.1 or later
             hr = m_d3dDevice.As(&m_d3dDevice1);
+
             if (SUCCEEDED(hr))
             {
-                m_immediateContext.As(&m_immediateContext1);
+                hr = m_immediateContext.As(&m_immediateContext1);
             }
 
             DXGI_SWAP_CHAIN_DESC1 sd =
@@ -189,89 +171,64 @@ namespace library
                 .Width = width,
                 .Height = height,
                 .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
-                .SampleDesc =
-                {
-                    .Count = 1,
-                    .Quality = 0
-                },
+                .SampleDesc = {.Count = 1, .Quality = 0 },
                 .BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT,
-                .BufferCount = 1,
+                .BufferCount = 1
             };
 
-            hr = dxgiFactory2->CreateSwapChainForHwnd(
-                m_d3dDevice.Get(),
-                hWnd,
-                &sd,
-                nullptr,
-                nullptr,
-                m_swapChain1.GetAddressOf()
-            );
+            hr = dxgiFactory2->CreateSwapChainForHwnd(m_d3dDevice.Get(), hWnd, &sd, nullptr, nullptr, m_swapChain1.GetAddressOf());
+
             if (SUCCEEDED(hr))
             {
                 hr = m_swapChain1.As(&m_swapChain);
             }
-
-            dxgiFactory2.Reset();
         }
         else
         {
+            // DirectX 11.0 systems
             DXGI_SWAP_CHAIN_DESC sd =
             {
                 .BufferDesc =
                 {
                     .Width = width,
                     .Height = height,
-                    .RefreshRate =
-                    {
-                        .Numerator = 60,
-                        .Denominator = 1
-                    },
+                    .RefreshRate = {.Numerator = 60, .Denominator = 1 },
                     .Format = DXGI_FORMAT_R8G8B8A8_UNORM
                 },
-                .SampleDesc =
-                {
-                    .Count = 1,
-                    .Quality = 0
-                },
+                .SampleDesc = {.Count = 1, .Quality = 1 },
                 .BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT,
                 .BufferCount = 1,
                 .OutputWindow = hWnd,
                 .Windowed = TRUE
             };
 
-            hr = dxgiFactory->CreateSwapChain(
-                m_d3dDevice.Get(),
-                &sd,
-                m_swapChain.GetAddressOf()
-            );
+            hr = dxgiFactory->CreateSwapChain(m_d3dDevice.Get(), &sd, m_swapChain.GetAddressOf());
         }
+
+        dxgiFactory->MakeWindowAssociation(hWnd, DXGI_MWA_NO_ALT_ENTER);
 
         if (FAILED(hr))
         {
-            MessageBox(nullptr, L"Cannot create swapchain!", L"Error", NULL);
             return hr;
         }
-#pragma endregion
 
-#pragma region CreateRenderTargetView        
+        // Create a render target view
         ComPtr< ID3D11Texture2D> pBackBuffer = nullptr;
-        hr = m_swapChain->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
+        hr = m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(pBackBuffer.GetAddressOf()));
+
         if (FAILED(hr))
         {
-            MessageBox(nullptr, L"Cannot get buffer!", L"Error", NULL);
             return hr;
         }
 
         hr = m_d3dDevice->CreateRenderTargetView(pBackBuffer.Get(), nullptr, m_renderTargetView.GetAddressOf());
+
         if (FAILED(hr))
         {
-            MessageBox(nullptr, L"Cannot create render target view!", L"Error", NULL);
             return hr;
         }
-#pragma endregion
 
-#pragma region CreateDepthStencilBuffer
-        // Depth Stencil texture
+        // Create depth stencil texture
         D3D11_TEXTURE2D_DESC descDepth =
         {
             .Width = width,
@@ -279,11 +236,7 @@ namespace library
             .MipLevels = 1,
             .ArraySize = 1,
             .Format = DXGI_FORMAT_D24_UNORM_S8_UINT,
-            .SampleDesc =
-            {
-                .Count = 1,
-                .Quality = 0
-            },
+            .SampleDesc = {.Count = 1, .Quality = 0 },
             .Usage = D3D11_USAGE_DEFAULT,
             .BindFlags = D3D11_BIND_DEPTH_STENCIL,
             .CPUAccessFlags = 0,
@@ -291,13 +244,13 @@ namespace library
         };
 
         hr = m_d3dDevice->CreateTexture2D(&descDepth, nullptr, m_depthStencil.GetAddressOf());
+
         if (FAILED(hr))
         {
-            MessageBox(nullptr, L"Cannot create depth stencil!", L"Error", NULL);
             return hr;
         }
 
-        // Depth Stencil View
+        // Create the depth stencil view
         D3D11_DEPTH_STENCIL_VIEW_DESC descDSV =
         {
             .Format = descDepth.Format,
@@ -306,127 +259,119 @@ namespace library
         };
 
         hr = m_d3dDevice->CreateDepthStencilView(m_depthStencil.Get(), &descDSV, m_depthStencilView.GetAddressOf());
+
         if (FAILED(hr))
         {
-            MessageBox(nullptr, L"Cannot create depth stencil view!", L"Error", NULL);
             return hr;
         }
 
         m_immediateContext->OMSetRenderTargets(1, m_renderTargetView.GetAddressOf(), m_depthStencilView.Get());
-#pragma endregion
 
-#pragma region SetUpViewport
+        // Setup the viewport
         D3D11_VIEWPORT vp =
         {
-            .TopLeftX = 0.0f,
-            .TopLeftY = 0.0f,
-            .Width = static_cast<FLOAT>(width),
-            .Height = static_cast<FLOAT>(height),
+            .TopLeftX = 0,
+            .TopLeftY = 0,
+            .Width = (FLOAT)width,
+            .Height = (FLOAT)height,
             .MinDepth = 0.0f,
             .MaxDepth = 1.0f
         };
 
         m_immediateContext->RSSetViewports(1, &vp);
-#pragma endregion
 
-#pragma region CreateConstantBufferChangeOnResize
-        // Initialize projection matrix
-        m_projection = XMMatrixPerspectiveFovLH(XM_PIDIV2, width / static_cast<FLOAT>(height), 0.01f, 100.0f);
+        hr = m_camera.Initialize(m_d3dDevice.Get());
 
-        D3D11_BUFFER_DESC cBufferDesc = {
+        if (FAILED(hr))
+        {
+            return hr;
+        }
+
+        // Initialize the projection matrix
+        m_projection = XMMatrixPerspectiveFovLH(XM_PIDIV2, width / (FLOAT)height, 0.01f, 100.0f);
+
+        // Initialize vertex shaders
+        for (auto vertexShader = m_vertexShaders.begin(); vertexShader != m_vertexShaders.end(); vertexShader++)
+        {
+            hr = vertexShader->second->Initialize(m_d3dDevice.Get());
+
+            if (FAILED(hr))
+            {
+                return hr;
+            }
+        }
+
+        // Initialize pixel shaders
+        for (auto pixelShader = m_pixelShaders.begin(); pixelShader != m_pixelShaders.end(); pixelShader++)
+        {
+            hr = pixelShader->second->Initialize(m_d3dDevice.Get());
+
+            if (FAILED(hr))
+            {
+                return hr;
+            }
+        }
+
+        // Initialize renderables
+        for (auto renderable = m_renderables.begin(); renderable != m_renderables.end(); renderable++)
+        {
+            hr = renderable->second->Initialize(m_d3dDevice.Get(), m_immediateContext.Get());
+
+            if (FAILED(hr))
+            {
+                return hr;
+            }
+        }
+
+        // Initialize voxels in the scene
+        for (auto voxel = m_scenes.begin(); voxel != m_scenes.end(); ++voxel)
+        {
+            for (int i = 0; i < voxel->second->GetVoxels().size(); ++i)
+            {
+                voxel->second->GetVoxels()[i]->Initialize(m_d3dDevice.Get(), m_immediateContext.Get());
+            }
+        }
+
+        // Create and set constant buffer
+        D3D11_BUFFER_DESC bd =
+        {
             .ByteWidth = sizeof(CBChangeOnResize),
             .Usage = D3D11_USAGE_DEFAULT,
             .BindFlags = D3D11_BIND_CONSTANT_BUFFER,
-            .CPUAccessFlags = 0,
-            .MiscFlags = 0,
+            .CPUAccessFlags = 0
         };
+
+        hr = m_d3dDevice->CreateBuffer(&bd, nullptr, m_cbChangeOnResize.GetAddressOf());
+
+        if (FAILED(hr))
+        {
+            return hr;
+        }
 
         CBChangeOnResize cbChangeOnResize =
         {
             .Projection = XMMatrixTranspose(m_projection)
         };
 
-        D3D11_SUBRESOURCE_DATA cData = {
-            .pSysMem = &cbChangeOnResize,
-            .SysMemPitch = 0,
-            .SysMemSlicePitch = 0
-        };
+        m_immediateContext->UpdateSubresource(m_cbChangeOnResize.Get(), 0, nullptr, &cbChangeOnResize, 0, 0);
 
-        hr = m_d3dDevice->CreateBuffer(&cBufferDesc, &cData, m_cbChangeOnResize.GetAddressOf());
-        if (FAILED(hr))
+        // Create a constant buffer deals with lights
+        D3D11_BUFFER_DESC bdLight =
         {
-            MessageBox(nullptr, L"Cannot create constant buffer!", L"Error", NULL);
-            return hr;
-        }
-
-        m_immediateContext->VSSetConstantBuffers(1, 1, m_cbChangeOnResize.GetAddressOf());
-#pragma endregion
-
-#pragma region CreateConstantBufferLights
-        D3D11_BUFFER_DESC cbLightsDesc = {
             .ByteWidth = sizeof(CBLights),
             .Usage = D3D11_USAGE_DEFAULT,
             .BindFlags = D3D11_BIND_CONSTANT_BUFFER,
             .CPUAccessFlags = 0,
             .MiscFlags = 0,
+            .StructureByteStride = 0
         };
 
-        CBLights cbLights = { };
+        hr = m_d3dDevice->CreateBuffer(&bdLight, nullptr, m_cbLights.GetAddressOf());
 
-        D3D11_SUBRESOURCE_DATA cbLightsData = {
-            .pSysMem = &cbLights,
-            .SysMemPitch = 0,
-            .SysMemSlicePitch = 0
-        };
-
-        hr = m_d3dDevice->CreateBuffer(&cbLightsDesc, &cbLightsData, &m_cbLights);
         if (FAILED(hr))
         {
-            MessageBox(nullptr, L"Cannot create light constant buffer!", L"Error", NULL);
             return hr;
         }
-
-        m_immediateContext->VSSetConstantBuffers(3, 1, m_cbLights.GetAddressOf());
-        m_immediateContext->PSSetConstantBuffers(3, 1, m_cbLights.GetAddressOf());
-#pragma endregion
-
-#pragma region InitializeShadersAndRenderables        
-        for (auto vertexShader : m_vertexShaders)
-        {
-            hr = vertexShader.second->Initialize(m_d3dDevice.Get());
-            if (FAILED(hr))
-            {
-                MessageBox(nullptr, L"Cannot initialize vertex shader!", L"Error", NULL);
-                return hr;
-            }
-        }
-
-        for (auto pixelShader : m_pixelShaders)
-        {
-            hr = pixelShader.second->Initialize(m_d3dDevice.Get());
-            if (FAILED(hr))
-            {
-                MessageBox(nullptr, L"Cannot initialize pixel shader!", L"Error", NULL);
-                return hr;
-            }
-        }
-
-        for (auto renderable : m_renderables)
-        {
-            hr = renderable.second->Initialize(m_d3dDevice.Get(), m_immediateContext.Get());
-            if (FAILED(hr))
-            {
-                MessageBox(nullptr, L"Cannot initialize renderables!", L"Error", NULL);
-                return hr;
-            }
-        }
-#pragma endregion
-
-        // Initialize Camera
-        m_camera.Initialize(m_d3dDevice.Get());
-
-        // Set primitive topology
-        m_immediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
         return S_OK;
     }
@@ -448,14 +393,15 @@ namespace library
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     HRESULT Renderer::AddRenderable(_In_ PCWSTR pszRenderableName, _In_ const std::shared_ptr<Renderable>& renderable)
     {
-        if (m_renderables.find(pszRenderableName) != m_renderables.end())
+        std::unordered_map<std::wstring, std::shared_ptr<Renderable>>::iterator iRenderable = m_renderables.find(pszRenderableName);
+
+        if (iRenderable != m_renderables.end())
         {
-            MessageBox(nullptr, L"Cannot add renderable!", L"Error", NULL);
             return E_FAIL;
         }
         else
         {
-            m_renderables.insert({ pszRenderableName, renderable });
+            m_renderables.insert(std::make_pair(pszRenderableName, renderable));
             return S_OK;
         }
     }
@@ -479,7 +425,6 @@ namespace library
     {
         if (index >= NUM_LIGHTS)
         {
-            MessageBox(nullptr, L"Cannot add point light!", L"Error", NULL);
             return E_FAIL;
         }
         else
@@ -506,14 +451,15 @@ namespace library
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     HRESULT Renderer::AddVertexShader(_In_ PCWSTR pszVertexShaderName, _In_ const std::shared_ptr<VertexShader>& vertexShader)
     {
-        if (m_vertexShaders.find(pszVertexShaderName) != m_vertexShaders.end())
+        std::unordered_map<std::wstring, std::shared_ptr<VertexShader>>::iterator iVertexShader = m_vertexShaders.find(pszVertexShaderName);
+
+        if (iVertexShader != m_vertexShaders.end())
         {
-            MessageBox(nullptr, L"Cannot add vertex shader!", L"Error", NULL);
             return E_FAIL;
         }
         else
         {
-            m_vertexShaders.insert({ pszVertexShaderName, vertexShader });
+            m_vertexShaders.insert(std::make_pair(pszVertexShaderName, vertexShader));
             return S_OK;
         }
     }
@@ -535,16 +481,72 @@ namespace library
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     HRESULT Renderer::AddPixelShader(_In_ PCWSTR pszPixelShaderName, _In_ const std::shared_ptr<PixelShader>& pixelShader)
     {
-        if (m_pixelShaders.find(pszPixelShaderName) != m_pixelShaders.end())
+        std::unordered_map<std::wstring, std::shared_ptr<PixelShader>>::iterator iPixelShader = m_pixelShaders.find(pszPixelShaderName);
+
+        if (iPixelShader != m_pixelShaders.end())
         {
-            MessageBox(nullptr, L"Cannot add pixel shader!", L"Error", NULL);
             return E_FAIL;
         }
         else
         {
-            m_pixelShaders.insert({ pszPixelShaderName, pixelShader });
+            m_pixelShaders.insert(std::make_pair(pszPixelShaderName, pixelShader));
             return S_OK;
         }
+    }
+
+    /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+      Method:   Renderer::AddScene
+
+      Summary:  Add a scene
+
+      Args:     PCWSTR pszSceneName
+                  Key of a scene
+                const std::filesystem::path& sceneFilePath
+                  File path to initialize a scene
+
+      Modifies: [m_scenes].
+
+      Returns:  HRESULT
+                  Status code
+    M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
+    HRESULT Renderer::AddScene(_In_ PCWSTR pszSceneName, const std::filesystem::path& sceneFilePath)
+    {
+        std::unordered_map<std::wstring, std::shared_ptr<Scene>>::iterator iScene = m_scenes.find(pszSceneName);
+
+        if (iScene != m_scenes.end())
+        {
+            return E_FAIL;
+        }
+        else
+        {
+            m_scenes.insert(std::make_pair(pszSceneName, std::make_shared<Scene>(sceneFilePath)));
+            return S_OK;
+        }
+    }
+
+    /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+      Method:   Renderer::SetMainScene
+
+      Summary:  Set the main scene
+
+      Args:     PCWSTR pszSceneName
+                  Name of the scene to set as the main scene
+
+      Modifies: [m_pszMainSceneName].
+
+      Returns:  HRESULT
+                  Status code
+    M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
+    HRESULT Renderer::SetMainScene(_In_ PCWSTR pszSceneName)
+    {
+        if (m_scenes.find(pszSceneName) == m_scenes.end())
+        {
+            return E_FAIL;
+        }
+
+        m_pszMainSceneName = pszSceneName;
+
+        return S_OK;
     }
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
@@ -559,17 +561,9 @@ namespace library
 
       Modifies: [m_camera].
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-    void Renderer::HandleInput(
-        _In_ const DirectionsInput& directions,
-        _In_ const MouseRelativeMovement& mouseRelativeMovement,
-        _In_ FLOAT deltaTime
-    )
+    void Renderer::HandleInput(_In_ const DirectionsInput& directions, _In_ const MouseRelativeMovement& mouseRelativeMovement, _In_ FLOAT deltaTime)
     {
-        m_camera.HandleInput(
-            directions,
-            mouseRelativeMovement,
-            deltaTime
-        );
+        m_camera.HandleInput(directions, mouseRelativeMovement, deltaTime);
     }
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
@@ -582,17 +576,20 @@ namespace library
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     void Renderer::Update(_In_ FLOAT deltaTime)
     {
-        for (auto& renderable : m_renderables)
+        for (auto renderable = m_renderables.begin(); renderable != m_renderables.end(); ++renderable)
         {
-            renderable.second->Update(deltaTime);
+            renderable->second->Update(deltaTime);
         }
 
-        for (auto& light : m_aPointLights)
+        for (UINT i = 0u; i < NUM_LIGHTS; ++i)
         {
-            light->Update(deltaTime);
+            m_aPointLights[i]->Update(deltaTime);
         }
 
-        m_camera.Update(deltaTime);
+        for (UINT i = 0u; i < m_scenes[m_pszMainSceneName]->GetVoxels().size(); ++i)
+        {
+            m_scenes[m_pszMainSceneName]->GetVoxels()[i]->Update(deltaTime);
+        }
     }
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
@@ -602,124 +599,131 @@ namespace library
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     void Renderer::Render()
     {
-        // Clear the backbuffer
+        // Clear the back buffer
         m_immediateContext->ClearRenderTargetView(m_renderTargetView.Get(), Colors::MidnightBlue);
 
-        // Clear the depth buffer to 1.0 (max depth)
-        m_immediateContext->ClearDepthStencilView(m_depthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+        // Clear the depth buffer to 1.0 (maximum depth)
+        m_immediateContext->ClearDepthStencilView(m_depthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0u);
 
-        // Create camera constant buffer and update
-        XMFLOAT4 camPos;
-        XMStoreFloat4(&camPos, m_camera.GetEye());
+        // Update the camera constant buffer
         CBChangeOnCameraMovement cbChangeOnCameraMovement =
         {
-            .View = XMMatrixTranspose(m_camera.GetView()),
-            .CameraPosition = camPos
+            .View = XMMatrixTranspose(m_camera.GetView())
         };
+        XMStoreFloat4(&cbChangeOnCameraMovement.CameraPosition, m_camera.GetEye());
 
-        m_immediateContext->UpdateSubresource(
-            m_camera.GetConstantBuffer().Get(),
-            0,
-            nullptr,
-            &cbChangeOnCameraMovement,
-            0,
-            0
-        );
-        m_immediateContext->VSSetConstantBuffers(0, 1, m_camera.GetConstantBuffer().GetAddressOf());
-        m_immediateContext->PSSetConstantBuffers(0, 1, m_camera.GetConstantBuffer().GetAddressOf());
+        m_immediateContext->UpdateSubresource(m_camera.GetConstantBuffer().Get(), 0u, nullptr, &cbChangeOnCameraMovement, 0u, 0u);
 
-        // Create lights constant buffer and update
+        // Update the lights constant buffer
         CBLights cbLights = {};
 
-        for (UINT i = 0; i < NUM_LIGHTS; ++i)
+        for (UINT i = 0u; i < NUM_LIGHTS; ++i)
         {
-            if (!m_aPointLights[i])
-                continue;
-
-            cbLights.LightPositions[i] = m_aPointLights[i]->GetPosition();
             cbLights.LightColors[i] = m_aPointLights[i]->GetColor();
+            cbLights.LightPositions[i] = m_aPointLights[i]->GetPosition();
         }
 
-        m_immediateContext->UpdateSubresource(
-            m_cbLights.Get(),
-            0,
-            nullptr,
-            &cbLights,
-            0,
-            0
-        );
-        m_immediateContext->PSSetConstantBuffers(3, 1, m_cbLights.GetAddressOf());
+        m_immediateContext->UpdateSubresource(m_cbLights.Get(), 0u, nullptr, &cbLights, 0u, 0u);
 
-        // Renderables Iterating
-        for (auto& pair : m_renderables)
+        for (auto renderable = m_renderables.begin(); renderable != m_renderables.end(); ++renderable)
         {
-            auto& renderable = pair.second;
-
             // Set the vertex buffer
             UINT stride = sizeof(SimpleVertex);
-            UINT offset = 0;
+            UINT offset = 0u;
+            m_immediateContext->IASetVertexBuffers(0, 1, renderable->second->GetVertexBuffer().GetAddressOf(), &stride, &offset);
 
-            m_immediateContext->IASetVertexBuffers(
-                0,
-                1,
-                renderable->GetVertexBuffer().GetAddressOf(),
-                &stride,
-                &offset
-            );
+            // Set the index buffer
+            m_immediateContext->IASetIndexBuffer(renderable->second->GetIndexBuffer().Get(), DXGI_FORMAT_R16_UINT, 0u);
 
-            //Set the index buffer
-            m_immediateContext->IASetIndexBuffer(renderable->GetIndexBuffer().Get(), DXGI_FORMAT_R16_UINT, 0);
+            // Set primitive topology
+            m_immediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
             // Set the input layout
-            m_immediateContext->IASetInputLayout(renderable->GetVertexLayout().Get());
+            m_immediateContext->IASetInputLayout(renderable->second->GetVertexLayout().Get());
 
-            // Create renderable constant buffer and update 
+            // Create renderable constant buffer and update
             CBChangesEveryFrame cbChangesEveryFrame =
             {
-                .World = XMMatrixTranspose(renderable->GetWorldMatrix()),
-                .OutputColor = renderable->GetOutputColor()
+                .World = XMMatrixTranspose(renderable->second->GetWorldMatrix()),
+                .OutputColor = renderable->second->GetOutputColor()
             };
+            m_immediateContext->UpdateSubresource(renderable->second->GetConstantBuffer().Get(), 0u, nullptr, &cbChangesEveryFrame, 0u, 0u);
 
-            m_immediateContext->UpdateSubresource(
-                renderable->GetConstantBuffer().Get(),
-                0,
-                nullptr,
-                &cbChangesEveryFrame,
-                0,
-                0
-            );
+            // Render
+            m_immediateContext->VSSetShader(renderable->second->GetVertexShader().Get(), nullptr, 0u);
+            m_immediateContext->VSSetConstantBuffers(0u, 1u, m_camera.GetConstantBuffer().GetAddressOf());
+            m_immediateContext->VSSetConstantBuffers(1u, 1u, m_cbChangeOnResize.GetAddressOf());
+            m_immediateContext->VSSetConstantBuffers(2u, 1u, renderable->second->GetConstantBuffer().GetAddressOf());
 
-            // Set shaders
-            m_immediateContext->VSSetShader(renderable->GetVertexShader().Get(), nullptr, 0);
-            m_immediateContext->PSSetShader(renderable->GetPixelShader().Get(), nullptr, 0);
+            m_immediateContext->PSSetShader(renderable->second->GetPixelShader().Get(), nullptr, 0u);
+            m_immediateContext->PSSetConstantBuffers(0u, 1u, m_camera.GetConstantBuffer().GetAddressOf());
+            m_immediateContext->PSSetConstantBuffers(2u, 1u, renderable->second->GetConstantBuffer().GetAddressOf());
+            m_immediateContext->PSSetConstantBuffers(3u, 1u, m_cbLights.GetAddressOf());
 
-            // Set renderable constant buffer
-            m_immediateContext->VSSetConstantBuffers(2, 1, renderable->GetConstantBuffer().GetAddressOf());
-            m_immediateContext->PSSetConstantBuffers(2, 1, renderable->GetConstantBuffer().GetAddressOf());
-
-            if (renderable->HasTexture())
+            if (renderable->second->HasTexture())
             {
-                // Set texture resource view of the renderable into the pixel shader
-                for (UINT i = 0; i < renderable->GetNumMeshes(); ++i)
+                for (UINT i = 0u; i < renderable->second->GetNumMeshes(); ++i)
                 {
-                    UINT materialIndex = renderable->GetMesh(i).uMaterialIndex;
-                    m_immediateContext->PSSetShaderResources(0, 1, renderable->GetMaterial(materialIndex).pDiffuse->GetTextureResourceView().GetAddressOf());
-                    // Set sampler state of the renderable into the pixel shader
-                    m_immediateContext->PSSetSamplers(0, 1, renderable->GetMaterial(materialIndex).pDiffuse->GetSamplerState().GetAddressOf());
+                    UINT materialIndex = renderable->second->GetMesh(i).uMaterialIndex;
 
-                    // Draw
-                    m_immediateContext->DrawIndexed(renderable->GetMesh(i).uNumIndices,
-                        renderable->GetMesh(i).uBaseIndex,
-                        renderable->GetMesh(i).uBaseVertex);
+                    m_immediateContext->PSSetShaderResources(0u, 1u, renderable->second->GetMaterial(materialIndex).pDiffuse->GetTextureResourceView().GetAddressOf());
+                    m_immediateContext->PSSetSamplers(0u, 1u, renderable->second->GetMaterial(materialIndex).pDiffuse->GetSamplerState().GetAddressOf());
+
+                    m_immediateContext->DrawIndexed(renderable->second->GetMesh(i).uNumIndices, renderable->second->GetMesh(i).uBaseIndex, renderable->second->GetMesh(i).uBaseVertex);
                 }
             }
-            else
+            m_immediateContext->DrawIndexed(renderable->second->GetNumIndices(), 0u, 0);
+        }
+
+        // Render the main scene
+        for (auto voxel = m_scenes.begin(); voxel != m_scenes.end(); ++voxel)
+        {
+            for (UINT i = 0u; i < voxel->second->GetVoxels().size(); ++i)
             {
+                // Set the vertex buffer
+                UINT stride = sizeof(SimpleVertex);
+                UINT offset = 0u;
+                m_immediateContext->IASetVertexBuffers(0u, 1u, voxel->second->GetVoxels()[i]->GetVertexBuffer().GetAddressOf(), &stride, &offset);
+
+                // Set the instance buffer
+                stride = sizeof(InstanceData);
+                m_immediateContext->IASetVertexBuffers(1u, 1u, voxel->second->GetVoxels()[i]->GetInstanceBuffer().GetAddressOf(), &stride, &offset);
+
+                // Set the index buffer
+                m_immediateContext->IASetIndexBuffer(voxel->second->GetVoxels()[i]->GetIndexBuffer().Get(), DXGI_FORMAT_R16_UINT, 0);
+
+                // Set primitive topology
+                m_immediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+                // Set the input layout
+                m_immediateContext->IASetInputLayout(voxel->second->GetVoxels()[i]->GetVertexLayout().Get());
+
+                // Set the constant buffer
+                CBChangesEveryFrame cbChangesEveryFrame =
+                {
+                    .World = XMMatrixTranspose(voxel->second->GetVoxels()[i]->GetWorldMatrix()),
+                    .OutputColor = voxel->second->GetVoxels()[i]->GetOutputColor()
+                };
+
+                m_immediateContext->UpdateSubresource(voxel->second->GetVoxels()[i]->GetConstantBuffer().Get(), 0u, nullptr, &cbChangesEveryFrame, 0u, 0u);
+
+                // Render
+                m_immediateContext->VSSetShader(voxel->second->GetVoxels()[i]->GetVertexShader().Get(), nullptr, 0u); // exception
+                m_immediateContext->VSSetConstantBuffers(0u, 1u, m_camera.GetConstantBuffer().GetAddressOf());
+                m_immediateContext->VSSetConstantBuffers(1u, 1u, m_cbChangeOnResize.GetAddressOf());
+                m_immediateContext->VSSetConstantBuffers(2u, 1u, voxel->second->GetVoxels()[i]->GetConstantBuffer().GetAddressOf());
+
+                m_immediateContext->PSSetShader(voxel->second->GetVoxels()[i]->GetPixelShader().Get(), nullptr, 0u);
+                m_immediateContext->PSSetConstantBuffers(0u, 1u, m_camera.GetConstantBuffer().GetAddressOf());
+                m_immediateContext->PSSetConstantBuffers(2u, 1u, voxel->second->GetVoxels()[i]->GetConstantBuffer().GetAddressOf());
+                m_immediateContext->PSSetConstantBuffers(3u, 1u, m_cbLights.GetAddressOf());
+
                 // Draw
-                m_immediateContext->DrawIndexed(renderable->GetNumIndices(), 0, 0);
+                m_immediateContext->DrawIndexedInstanced(voxel->second->GetVoxels()[i]->GetNumIndices(), voxel->second->GetVoxels()[i]->GetNumInstances(), 0u, 0, 0u);
             }
         }
-        // Present
+
+        // Present the information rendered to the back buffer to the front buffer
         m_swapChain->Present(0, 0);
     }
 
@@ -740,19 +744,12 @@ namespace library
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     HRESULT Renderer::SetVertexShaderOfRenderable(_In_ PCWSTR pszRenderableName, _In_ PCWSTR pszVertexShaderName)
     {
-        /*if (m_renderables.find(pszRenderableName) == m_renderables.end())
+        if (m_renderables.find(pszRenderableName) == m_renderables.end() || m_vertexShaders.find(pszVertexShaderName) == m_vertexShaders.end())
         {
-            MessageBox(nullptr, L"Cannot set vertex shader of renderable(R)!", L"Error", NULL);
-            return E_FAIL;
-        }*/
-
-        if (m_vertexShaders.find(pszVertexShaderName) == m_vertexShaders.end())
-        {
-            MessageBox(nullptr, L"Cannot set vertex shader of renderable(V)!", L"Error", NULL);
             return E_FAIL;
         }
 
-        m_renderables.find(pszRenderableName)->second->SetVertexShader(m_vertexShaders.find(pszVertexShaderName)->second);
+        m_renderables[pszRenderableName]->SetVertexShader(m_vertexShaders[pszVertexShaderName]);
 
         return S_OK;
     }
@@ -774,22 +771,76 @@ namespace library
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     HRESULT Renderer::SetPixelShaderOfRenderable(_In_ PCWSTR pszRenderableName, _In_ PCWSTR pszPixelShaderName)
     {
-        /*if (m_renderables.find(pszRenderableName) == m_renderables.end())
+        if (m_renderables.find(pszRenderableName) == m_renderables.end() || m_pixelShaders.find(pszPixelShaderName) == m_pixelShaders.end())
         {
-            MessageBox(nullptr, L"Cannot set pixel shader of renderable(R)!", L"Error", NULL);
-            return E_FAIL;
-        }*/
-
-        if (m_pixelShaders.find(pszPixelShaderName) == m_pixelShaders.end())
-        {
-            MessageBox(nullptr, L"Cannot set pixel shader of renderable(P)!", L"Error", NULL);
             return E_FAIL;
         }
 
-        m_renderables.find(pszRenderableName)->second->SetPixelShader(m_pixelShaders.find(pszPixelShaderName)->second);
+        m_renderables[pszRenderableName]->SetPixelShader(m_pixelShaders[pszPixelShaderName]);
 
         return S_OK;
     }
+
+    /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+      Method:   Renderer::SetVertexShaderOfScene
+
+      Summary:  Sets the vertex shader for the voxels in a scene
+
+      Args:     PCWSTR pszSceneName
+                  Key of the scene
+                PCWSTR pszVertexShaderName
+                  Key of the vertex shader
+
+      Modifies: [m_scenes].
+
+      Returns:  HRESULT
+                  Status code
+    M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
+    HRESULT Renderer::SetVertexShaderOfScene(_In_ PCWSTR pszSceneName, _In_ PCWSTR pszVertexShaderName)
+    {
+        if (m_scenes.find(pszSceneName) == m_scenes.end() || m_vertexShaders.find(pszVertexShaderName) == m_vertexShaders.end())
+        {
+            return E_FAIL;
+        }
+
+        for (UINT i = 0u; i < m_scenes[pszSceneName]->GetVoxels().size(); ++i)
+        {
+            m_scenes[pszSceneName]->GetVoxels()[i]->SetVertexShader(m_vertexShaders[pszVertexShaderName]);
+        }
+
+        return S_OK;
+    }
+
+    /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
+      Method:   Renderer::SetPixelShaderOfScene
+
+      Summary:  Sets the pixel shader for the voxels in a scene
+
+      Args:     PCWSTR pszRenderableName
+                  Key of the renderable
+                PCWSTR pszPixelShaderName
+                  Key of the pixel shader
+
+      Modifies: [m_renderables].
+
+      Returns:  HRESULT
+                  Status code
+    M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
+    HRESULT Renderer::SetPixelShaderOfScene(_In_ PCWSTR pszSceneName, _In_ PCWSTR pszPixelShaderName)
+    {
+        if (m_scenes.find(pszSceneName) == m_scenes.end() || m_pixelShaders.find(pszPixelShaderName) == m_pixelShaders.end())
+        {
+            return E_FAIL;
+        }
+
+        for (UINT i = 0u; i < m_scenes[pszSceneName]->GetVoxels().size(); ++i)
+        {
+            m_scenes[pszSceneName]->GetVoxels()[i]->SetPixelShader(m_pixelShaders[pszPixelShaderName]);
+        }
+
+        return S_OK;
+    }
+
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
       Method:   Renderer::GetDriverType

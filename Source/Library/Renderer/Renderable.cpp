@@ -15,27 +15,27 @@ namespace library
                   Default color of the renderable
 
       Modifies: [m_vertexBuffer, m_indexBuffer, m_constantBuffer,
-                 m_aMeshes, m_aMaterials, m_vertexShader,
-                 m_pixelShader, m_outputColor, m_padding,
+                 m_textureRV, m_samplerLinear, m_vertexShader,
+                 m_pixelShader, m_textureFilePath, m_outputColor,
                  m_world].
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     Renderable::Renderable(_In_ const XMFLOAT4& outputColor)
-        : m_vertexBuffer()
-        , m_indexBuffer()
-        , m_constantBuffer()
+        : m_vertexBuffer(nullptr)
+        , m_indexBuffer(nullptr)
+        , m_constantBuffer(nullptr)
         , m_aMeshes(std::vector<BasicMeshEntry>())
         , m_aMaterials(std::vector<Material>())
-        , m_vertexShader()
-        , m_pixelShader()
-        , m_outputColor()
-        , m_padding()
+        , m_vertexShader(nullptr)
+        , m_pixelShader(nullptr)
+        , m_outputColor(outputColor)
         , m_world(XMMatrixIdentity())
-    {}
+        , m_padding()
+    { }
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
       Method:   Renderable::initialize
 
-      Summary:  Initializes the buffers, texture, and the world matrix
+      Summary:  Initializes the buffers and the world matrix
 
       Args:     ID3D11Device* pDevice
                   The Direct3D device to create the buffers
@@ -47,86 +47,77 @@ namespace library
       Returns:  HRESULT
                   Status code
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-    HRESULT Renderable::initialize(_In_ ID3D11Device* pDevice, _In_ ID3D11DeviceContext*)
+    HRESULT Renderable::initialize(_In_ ID3D11Device* pDevice, _In_ ID3D11DeviceContext* pImmediateContext)
     {
         HRESULT hr = S_OK;
 
         // Create the vertex buffer
-        D3D11_BUFFER_DESC bd =
+        D3D11_BUFFER_DESC vertexBufferDesc =
         {
-            .ByteWidth = static_cast<UINT>(sizeof(SimpleVertex)) * GetNumVertices(),
+            .ByteWidth = sizeof(SimpleVertex) * GetNumVertices(),
             .Usage = D3D11_USAGE_DEFAULT,
             .BindFlags = D3D11_BIND_VERTEX_BUFFER,
-            .CPUAccessFlags = 0,
-            .MiscFlags = 0
+            .CPUAccessFlags = 0u,
+            .MiscFlags = 0u,
+            .StructureByteStride = 0u
         };
 
-        D3D11_SUBRESOURCE_DATA InitData =
+        D3D11_SUBRESOURCE_DATA vertexInitData =
         {
             .pSysMem = getVertices(),
-            .SysMemPitch = 0,
-            .SysMemSlicePitch = 0
+            .SysMemPitch = 0u,
+            .SysMemSlicePitch = 0u
         };
 
-        hr = pDevice->CreateBuffer(&bd, &InitData, m_vertexBuffer.GetAddressOf());
+        hr = pDevice->CreateBuffer(&vertexBufferDesc, &vertexInitData, m_vertexBuffer.GetAddressOf());
+
         if (FAILED(hr))
         {
-            MessageBox(nullptr, L"Cannot create vertex buffer!", L"Error", NULL);
             return hr;
         }
 
         // Create the index buffer
-        bd =
+        D3D11_BUFFER_DESC indexBufferDesc =
         {
             .ByteWidth = static_cast<UINT>(sizeof(WORD)) * GetNumIndices(),
             .Usage = D3D11_USAGE_DEFAULT,
             .BindFlags = D3D11_BIND_INDEX_BUFFER,
-            .CPUAccessFlags = 0,
-            .MiscFlags = 0
+            .CPUAccessFlags = 0u
         };
 
-        InitData =
+        D3D11_SUBRESOURCE_DATA indexInitData =
         {
             .pSysMem = getIndices(),
-            .SysMemPitch = 0,
-            .SysMemSlicePitch = 0
+            .SysMemPitch = 0u,
+            .SysMemSlicePitch = 0u
         };
 
-        hr = pDevice->CreateBuffer(&bd, &InitData, m_indexBuffer.GetAddressOf());
+        hr = pDevice->CreateBuffer(&indexBufferDesc, &indexInitData, m_indexBuffer.GetAddressOf());
+
         if (FAILED(hr))
         {
-            MessageBox(nullptr, L"Cannot create index buffer!", L"Error", NULL);
             return hr;
         }
 
         // Create the constant buffer
-        bd =
+        D3D11_BUFFER_DESC constantBufferDesc =
         {
             .ByteWidth = sizeof(CBChangesEveryFrame),
             .Usage = D3D11_USAGE_DEFAULT,
             .BindFlags = D3D11_BIND_CONSTANT_BUFFER,
             .CPUAccessFlags = 0,
-            .MiscFlags = 0,
-            .StructureByteStride = 0
+            .MiscFlags = 0u,
+            .StructureByteStride = 0u
         };
 
-        CBChangesEveryFrame cb = {
-            .World = XMMatrixTranspose(m_world),
-            .OutputColor = m_outputColor
-        };
+        hr = pDevice->CreateBuffer(&constantBufferDesc, nullptr, m_constantBuffer.GetAddressOf());
 
-        D3D11_SUBRESOURCE_DATA cData = {
-            .pSysMem = &cb,
-            .SysMemPitch = 0,
-            .SysMemSlicePitch = 0
-        };
-
-        hr = pDevice->CreateBuffer(&bd, &cData, m_constantBuffer.GetAddressOf());
         if (FAILED(hr))
         {
-            MessageBox(nullptr, L"Cannot create constant buffer!", L"Error", NULL);
             return hr;
         }
+
+        return S_OK;
     }
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
@@ -279,6 +270,7 @@ namespace library
         {
             return TRUE;
         }
+
         return FALSE;
     }
 
@@ -371,7 +363,7 @@ namespace library
 
       Modifies: [m_world].
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-    void Renderable::RotateRollPitchYaw(_In_ FLOAT pitch, _In_ FLOAT yaw, _In_ FLOAT roll)
+    void Renderable::RotateRollPitchYaw(_In_ FLOAT roll, _In_ FLOAT pitch, _In_ FLOAT yaw)
     {
         m_world *= XMMatrixRotationRollPitchYaw(pitch, yaw, roll);
     }

@@ -205,9 +205,6 @@ namespace library
     {
         HRESULT hr = S_OK;
 
-        /*m_aMeshes.resize(pScene->mNumMeshes);
-        m_aMaterials.resize(pScene->mNumMaterials);*/
-
         UINT uNumVertices = 0u;
         UINT uNumIndices = 0u;
 

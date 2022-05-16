@@ -68,7 +68,7 @@ namespace library
             m_pszEntryPoint, 
             m_pszShaderModel, 
             dwShaderFlags, 
-            0, 
+            0u, 
             ppOutBlob, 
             pErrorBlob.GetAddressOf()
         );
