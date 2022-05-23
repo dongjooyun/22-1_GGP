@@ -12,7 +12,7 @@ namespace library
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     InstancedRenderable::InstancedRenderable(_In_ const XMFLOAT4& outputColor)
         : Renderable(outputColor)
-        , m_instanceBuffer()
+        , m_instanceBuffer(nullptr)
         , m_aInstanceData(std::vector<InstanceData>())
         , m_padding()
     {}
@@ -31,7 +31,7 @@ namespace library
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     InstancedRenderable::InstancedRenderable(_In_ std::vector<InstanceData>&& aInstanceData, _In_ const XMFLOAT4& outputColor)
         : Renderable(outputColor)
-        , m_instanceBuffer()
+        , m_instanceBuffer(nullptr)
         , m_aInstanceData(std::move(aInstanceData))
         , m_padding()
     {}

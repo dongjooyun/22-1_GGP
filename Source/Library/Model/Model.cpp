@@ -22,7 +22,7 @@ namespace library
         , m_aVertices(std::vector<SimpleVertex>())
         , m_aIndices(std::vector<WORD>())
         , m_padding()
-    { }
+    {}
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
       Method:   Model::Initialize

@@ -63,7 +63,7 @@ namespace library
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     void Voxel::Update(_In_ FLOAT deltaTime)
     {
-        // Does nothing
+        
     }
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M

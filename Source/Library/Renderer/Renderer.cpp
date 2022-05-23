@@ -64,24 +64,24 @@ namespace library
         UINT height = rc.bottom - static_cast<UINT>(rc.top);
 
         //  Clip cursor to screen
-        POINT p1 =
+        POINT LeftTop =
         {
             .x = rc.left,
             .y = rc.top - 30
         };
-        POINT p2 =
+        POINT RightBottom =
         {
             .x = rc.right,
             .y = rc.bottom
         };
 
-        ClientToScreen(hWnd, &p1);
-        ClientToScreen(hWnd, &p2);
+        ClientToScreen(hWnd, &LeftTop);
+        ClientToScreen(hWnd, &RightBottom);
 
-        rc.left = p1.x;
-        rc.top = p1.y;
-        rc.right = p2.x;
-        rc.bottom = p2.y;
+        rc.left = LeftTop.x;
+        rc.top = LeftTop.y;
+        rc.right = RightBottom.x;
+        rc.bottom = RightBottom.y;
 
         ClipCursor(&rc);
 
@@ -105,6 +105,7 @@ namespace library
             D3D_FEATURE_LEVEL_10_1,
             D3D_FEATURE_LEVEL_10_0,
         };
+
         UINT numFeatureLevels = ARRAYSIZE(featureLevels);
 
         for (UINT driverTypeIndex = 0; driverTypeIndex < numDriverTypes; driverTypeIndex++)
@@ -123,13 +124,13 @@ namespace library
                 break;
             }
         }
-
         if (FAILED(hr))
         {
+            MessageBox(nullptr, L"Cannot create D3D11device!", L"Error", NULL);
             return hr;
         }
 
-        // Obtain DXGI factory from device (since we used nullptr for pAdapter above)
+        // Set DXGI factory
         ComPtr<IDXGIFactory1> dxgiFactory = nullptr;
         {
             ComPtr<IDXGIDevice> dxgiDevice = nullptr;
@@ -142,13 +143,14 @@ namespace library
 
                 if (SUCCEEDED(hr))
                 {
-                    hr = adapter->GetParent(__uuidof(IDXGIFactory1), reinterpret_cast<void**>(dxgiFactory.GetAddressOf()));
+                    hr = adapter->GetParent(IID_PPV_ARGS(dxgiFactory.GetAddressOf()));
                 }
             }
         }
 
         if (FAILED(hr))
         {
+            MessageBox(nullptr, L"Cannot set DXGIfactory!", L"Error", NULL);
             return hr;
         }
 
@@ -158,7 +160,6 @@ namespace library
 
         if (dxgiFactory2)
         {
-            // DirectX 11.1 or later
             hr = m_d3dDevice.As(&m_d3dDevice1);
 
             if (SUCCEEDED(hr))
@@ -171,9 +172,13 @@ namespace library
                 .Width = width,
                 .Height = height,
                 .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
-                .SampleDesc = {.Count = 1, .Quality = 0 },
+                .SampleDesc =
+                {
+                    .Count = 1,
+                    .Quality = 0
+                },
                 .BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT,
-                .BufferCount = 1
+                .BufferCount = 1,
             };
 
             hr = dxgiFactory2->CreateSwapChainForHwnd(m_d3dDevice.Get(), hWnd, &sd, nullptr, nullptr, m_swapChain1.GetAddressOf());
@@ -192,10 +197,18 @@ namespace library
                 {
                     .Width = width,
                     .Height = height,
-                    .RefreshRate = {.Numerator = 60, .Denominator = 1 },
+                    .RefreshRate =
+                    {
+                        .Numerator = 60,
+                        .Denominator = 1
+                    },
                     .Format = DXGI_FORMAT_R8G8B8A8_UNORM
                 },
-                .SampleDesc = {.Count = 1, .Quality = 1 },
+                .SampleDesc =
+                {
+                    .Count = 1,
+                    .Quality = 0
+                },
                 .BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT,
                 .BufferCount = 1,
                 .OutputWindow = hWnd,
@@ -205,19 +218,19 @@ namespace library
             hr = dxgiFactory->CreateSwapChain(m_d3dDevice.Get(), &sd, m_swapChain.GetAddressOf());
         }
 
-        dxgiFactory->MakeWindowAssociation(hWnd, DXGI_MWA_NO_ALT_ENTER);
-
         if (FAILED(hr))
         {
+            MessageBox(nullptr, L"Cannot create swapchain!", L"Error", NULL);
             return hr;
         }
 
         // Create a render target view
         ComPtr< ID3D11Texture2D> pBackBuffer = nullptr;
-        hr = m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(pBackBuffer.GetAddressOf()));
+        hr = m_swapChain->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
 
         if (FAILED(hr))
         {
+            MessageBox(nullptr, L"Cannot get buffer!", L"Error", NULL);
             return hr;
         }
 
@@ -225,6 +238,7 @@ namespace library
 
         if (FAILED(hr))
         {
+            MessageBox(nullptr, L"Cannot create render target view!", L"Error", NULL);
             return hr;
         }
 
@@ -236,7 +250,11 @@ namespace library
             .MipLevels = 1,
             .ArraySize = 1,
             .Format = DXGI_FORMAT_D24_UNORM_S8_UINT,
-            .SampleDesc = {.Count = 1, .Quality = 0 },
+            .SampleDesc =
+            {
+                .Count = 1,
+                .Quality = 0
+            },
             .Usage = D3D11_USAGE_DEFAULT,
             .BindFlags = D3D11_BIND_DEPTH_STENCIL,
             .CPUAccessFlags = 0,
@@ -247,6 +265,7 @@ namespace library
 
         if (FAILED(hr))
         {
+            MessageBox(nullptr, L"Cannot create depth stencil!", L"Error", NULL);
             return hr;
         }
 
@@ -262,6 +281,7 @@ namespace library
 
         if (FAILED(hr))
         {
+            MessageBox(nullptr, L"Cannot create depth stencil view!", L"Error", NULL);
             return hr;
         }
 
@@ -270,10 +290,10 @@ namespace library
         // Setup the viewport
         D3D11_VIEWPORT vp =
         {
-            .TopLeftX = 0,
-            .TopLeftY = 0,
-            .Width = (FLOAT)width,
-            .Height = (FLOAT)height,
+            .TopLeftX = 0.0f,
+            .TopLeftY = 0.0f,
+            .Width = static_cast<FLOAT>(width),
+            .Height = static_cast<FLOAT>(height),
             .MinDepth = 0.0f,
             .MaxDepth = 1.0f
         };

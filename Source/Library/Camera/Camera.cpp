@@ -13,24 +13,24 @@ namespace library
                  m_eye, m_at, m_up, m_rotation, m_view].
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     Camera::Camera(_In_ const XMVECTOR& position)
-        : m_cbChangeOnCameraMovement()
-        , m_yaw(0.0f)
+        : m_yaw(0.0f)
         , m_pitch(0.0f)
-        , m_moveLeftRight()
-        , m_moveBackForward()
-        , m_moveUpDown()
+        , m_moveLeftRight(0.0f)
+        , m_moveBackForward(0.0f)
+        , m_moveUpDown(0.0f)
         , m_travelSpeed(5.0f)
-        , m_rotationSpeed(0.5f)
+        , m_rotationSpeed(0.1f)
         , m_padding()
         , m_cameraForward(DEFAULT_FORWARD)
         , m_cameraRight(DEFAULT_RIGHT)
         , m_cameraUp(DEFAULT_UP)
-        , m_eye(position)
-        , m_at()
-        , m_up()
-        , m_rotation()
-        , m_view()
-    {}
+        , m_eye(XMVectorSet(0.0f, 1.0f, -5.0f, 0.0f))
+        , m_at(XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f))
+        , m_up(XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f))
+        , m_rotation(XMMatrixIdentity())
+        , m_view(XMMatrixLookAtLH(m_eye, m_at, m_up))
+        , m_cbChangeOnCameraMovement(nullptr)
+    { }
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
       Method:   Camera::GetEye
@@ -86,9 +86,7 @@ namespace library
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
       Method:   Camera::GetConstantBuffer
-
       Summary:  Returns the constant buffer
-
       Returns:  ComPtr<ID3D11Buffer>&
                   The constant buffer
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
@@ -114,44 +112,45 @@ namespace library
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     void Camera::HandleInput(_In_ const DirectionsInput& directions, _In_ const MouseRelativeMovement& mouseRelativeMovement, _In_ FLOAT deltaTime)
     {
-        if (mouseRelativeMovement.X != 0 || mouseRelativeMovement.Y != 0)
+        FLOAT moveSpeed = m_travelSpeed * deltaTime;
+
+        m_yaw += static_cast<FLOAT>(mouseRelativeMovement.X) * m_rotationSpeed * deltaTime;
+        m_pitch += static_cast<FLOAT>(mouseRelativeMovement.Y) * m_rotationSpeed * deltaTime;
+
+        if ((m_pitch + static_cast<FLOAT>(mouseRelativeMovement.Y) * m_rotationSpeed) >= -XM_PIDIV2 && (m_pitch + static_cast<FLOAT>(mouseRelativeMovement.Y) * m_rotationSpeed) <= XM_PIDIV2)
         {
-            m_yaw += static_cast<FLOAT>(mouseRelativeMovement.X * m_rotationSpeed * deltaTime);
+            m_pitch += static_cast<FLOAT>(mouseRelativeMovement.Y) * m_rotationSpeed;
         }
 
-        // m_pitch range: (-pi/2, pi/2)
-        if (m_pitch + static_cast<FLOAT>(mouseRelativeMovement.Y) * m_rotationSpeed > -XM_PIDIV2
-            && m_pitch + static_cast<FLOAT>(mouseRelativeMovement.Y) * m_rotationSpeed < XM_PIDIV2)
-        {
-            m_pitch += static_cast<FLOAT>(mouseRelativeMovement.Y * m_rotationSpeed * deltaTime);
-        }
+        m_yaw += static_cast<FLOAT>(mouseRelativeMovement.X) * m_rotationSpeed;
 
-        if (directions.bFront) 
+        if (directions.bFront)
         {
-            m_moveBackForward += m_travelSpeed * deltaTime;
+            m_moveBackForward += moveSpeed;
         }
         if (directions.bBack) 
         {
-            m_moveBackForward -= m_travelSpeed * deltaTime;
+            m_moveBackForward -= moveSpeed;
         }
-
-        if (directions.bRight) 
+        if (directions.bRight)
         {
-            m_moveLeftRight += m_travelSpeed * deltaTime;
+            m_moveLeftRight += moveSpeed;
         }
         if (directions.bLeft) 
         {
-            m_moveLeftRight -= m_travelSpeed * deltaTime;
+            m_moveLeftRight -= moveSpeed;
         }
 
         if (directions.bUp)
         {
-            m_moveUpDown += m_travelSpeed * deltaTime;
+            m_moveUpDown += moveSpeed;
         }
-        if (directions.bDown)
+        if (directions.bDown) 
         {
-            m_moveUpDown -= m_travelSpeed * deltaTime;
+            m_moveUpDown -= moveSpeed;
         }
+
+        Camera::Update(deltaTime);
     }
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
@@ -179,6 +178,7 @@ namespace library
         };
 
         hr = device->CreateBuffer(&bd, nullptr, m_cbChangeOnCameraMovement.GetAddressOf());
+
         if (FAILED(hr))
         {
             MessageBox(nullptr, L"Cannot create camera buffer!", L"Error", NULL);
@@ -203,23 +203,23 @@ namespace library
     void Camera::Update(_In_ FLOAT deltaTime)
     {
         m_rotation = XMMatrixRotationRollPitchYaw(m_pitch, m_yaw, 0.0f);
+        m_at = XMVector3TransformCoord(DEFAULT_FORWARD, m_rotation);
+        m_at = XMVector3Normalize(m_at);
 
-        XMMATRIX RotateYTempMatrix = XMMatrixRotationY(m_yaw);
+        XMMATRIX rotateYTempMatrix = XMMatrixRotationY(m_yaw);
 
-        m_cameraForward = XMVector3TransformCoord(DEFAULT_FORWARD, RotateYTempMatrix);
-        m_cameraRight = XMVector3TransformCoord(DEFAULT_RIGHT, RotateYTempMatrix);
-        m_cameraUp = XMVector3TransformCoord(DEFAULT_UP, RotateYTempMatrix);
+        m_cameraForward = XMVector3TransformCoord(DEFAULT_FORWARD, rotateYTempMatrix);
+        m_cameraRight = XMVector3TransformCoord(DEFAULT_RIGHT, rotateYTempMatrix);
+        m_cameraUp = XMVector3TransformCoord(m_cameraUp, rotateYTempMatrix);
 
         m_eye += m_moveBackForward * m_cameraForward;
         m_eye += m_moveLeftRight * m_cameraRight;
         m_eye += m_moveUpDown * m_cameraUp;
 
-        m_at = m_eye + XMVector3TransformCoord(DEFAULT_FORWARD, m_rotation);
+        m_at += m_eye;
 
-        m_up = XMVector3TransformCoord(DEFAULT_UP, m_rotation);
-
-        m_moveBackForward = 0.0f;
         m_moveLeftRight = 0.0f;
+        m_moveBackForward = 0.0f;
         m_moveUpDown = 0.0f;
 
         m_view = XMMatrixLookAtLH(m_eye, m_at, m_up);
