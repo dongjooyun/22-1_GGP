@@ -16,7 +16,9 @@ namespace library
         : m_pszGameName(pszGameName)
         , m_mainWindow(std::make_unique<MainWindow>())
         , m_renderer(std::make_unique<Renderer>())
-    {}
+    {
+        // empty
+    }
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
       Method:   Game::Initialize
@@ -34,7 +36,7 @@ namespace library
       Returns:  HRESULT
                   Status code
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-    HRESULT Game::Initialize(_In_ HINSTANCE hInstance, _In_ INT nCmdShow)
+    HRESULT Game::Initialize(_In_ HINSTANCE hInstance, _In_ INT	nCmdShow)
     {
         if (FAILED(m_mainWindow->Initialize(hInstance, nCmdShow, m_pszGameName)))
         {
@@ -59,39 +61,49 @@ namespace library
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     INT Game::Run()
     {
-        LARGE_INTEGER startTime;
-        LARGE_INTEGER stopTime;
-        LARGE_INTEGER elapsedTime;
-        LARGE_INTEGER frequency;
+        // Initialize time
+        LARGE_INTEGER LastTime;
+        LARGE_INTEGER CurrentTime;
+        LARGE_INTEGER Frequency;
 
-        QueryPerformanceFrequency(&frequency);
-        QueryPerformanceCounter(&startTime);
+        FLOAT deltaTime;
 
+        QueryPerformanceFrequency(&Frequency);
+        QueryPerformanceCounter(&LastTime);
+
+        // Main message loop
         MSG msg = { 0 };
         while (WM_QUIT != msg.message)
         {
             if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
             {
+                // Call WndProc Function
                 TranslateMessage(&msg);
                 DispatchMessage(&msg);
             }
             else
             {
-                QueryPerformanceCounter(&stopTime);
+                // Update our time
+                QueryPerformanceCounter(&CurrentTime);
 
-                elapsedTime.QuadPart = stopTime.QuadPart - startTime.QuadPart;
-                elapsedTime.QuadPart *= 1000000;
-                elapsedTime.QuadPart /= static_cast<FLOAT>(frequency.QuadPart);
+                deltaTime = static_cast<FLOAT>(CurrentTime.QuadPart - LastTime.QuadPart);
+                deltaTime /= static_cast<FLOAT>(Frequency.QuadPart);
 
-                QueryPerformanceFrequency(&frequency);
-                QueryPerformanceCounter(&startTime);
+                LastTime = CurrentTime;
 
-                m_renderer->HandleInput(m_mainWindow->GetDirections(), m_mainWindow->GetMouseRelativeMovement(), static_cast<FLOAT>(elapsedTime.QuadPart) / 1000000.0f);
+                // Handle input
+                m_renderer->HandleInput(m_mainWindow->GetDirections(), m_mainWindow->GetMouseRelativeMovement(), deltaTime);
                 m_mainWindow->ResetMouseMovement();
-                m_renderer->Update(static_cast<FLOAT>(elapsedTime.QuadPart) / 1000000.0f);
+
+                // Render
+                m_renderer->Update(deltaTime);
                 m_renderer->Render();
             }
         }
+
+#ifdef _DEBUG
+        m_renderer->Debug();
+#endif
 
         return static_cast<INT>(msg.wParam);
     }

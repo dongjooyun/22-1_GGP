@@ -1,7 +1,8 @@
 //--------------------------------------------------------------------------------------
-// File: PhongShaders.fx
+// File: PhongShaders.fxh
 //
-// Copyright (c) Kyung Hee University.
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License (MIT).
 //--------------------------------------------------------------------------------------
 
 #define NUM_LIGHTS (2)
@@ -10,7 +11,9 @@
 // Global Variables
 //--------------------------------------------------------------------------------------
 Texture2D txDiffuse : register( t0 );
-SamplerState samLinear : register( s0 );
+Texture2D txNormal : register( t1 );
+SamplerState samDiffuse : register( s0 );
+SamplerState samNormal : register( s1 );
 
 //--------------------------------------------------------------------------------------
 // Constant Buffer Variables
@@ -45,6 +48,7 @@ cbuffer cbChangesEveryFrame : register( b2 )
 {
     matrix World;
     float4 OutputColor;
+    bool HasNormalMap;
 };
 
 /*C+C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C
@@ -69,6 +73,8 @@ struct VS_PHONG_INPUT
     float4 Position : POSITION;
     float2 TexCoord : TEXCOORD0;
     float3 Normal : NORMAL;
+    float3 Tangent : TANGENT;
+    float3 Bitangent : BITANGENT;
 };
 
 /*C+C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C
@@ -80,9 +86,11 @@ C---C---C---C---C---C---C---C---C---C---C---C---C---C---C---C---C-C*/
 struct PS_PHONG_INPUT
 {
     float4 Position : SV_POSITION;
-	float2 TexCoord : TEXCOORD;
-	float3 Normal : NORMAL;
-	float3 WorldPos : WORLDPOS;
+    float2 TexCoord : TEXCOORD0;
+    float3 Normal : NORMAL;
+    float3 WorldPosition : WORLDPOS;
+    float3 Tangent : TANGENT;
+    float3 Bitangent : BITANGENT;
 };
 
 /*C+C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C
@@ -99,30 +107,34 @@ struct PS_LIGHT_CUBE_INPUT
 //--------------------------------------------------------------------------------------
 // Vertex Shader
 //--------------------------------------------------------------------------------------
-PS_PHONG_INPUT VSPhong( VS_PHONG_INPUT input )
+PS_PHONG_INPUT VSPhong(VS_PHONG_INPUT input)
 {
-	PS_PHONG_INPUT output = (PS_PHONG_INPUT) 0;
-	output.Position = input.Position;
-	output.Position = mul(output.Position, World);
-	output.Position = mul(output.Position, View);
-	output.Position = mul(output.Position, Projection);
-    
-	output.TexCoord = input.TexCoord;
-    
-	output.Normal = mul(float4(input.Normal, 0.0f), World).xyz;
-    
-	output.WorldPos = mul(input.Position, World);
+    PS_PHONG_INPUT output = (PS_PHONG_INPUT) 0;
+    output.Position = mul(input.Position, World);
+    output.WorldPosition = output.Position;
+    output.Position = mul(output.Position, View);
+    output.Position = mul(output.Position, Projection);
 
-	return output;
+    output.TexCoord = input.TexCoord;
+    
+    output.Normal = mul(float4(input.Normal, 0.0f), World).xyz;
+    
+    if (HasNormalMap)
+    {
+        output.Tangent = normalize(mul(float4(input.Tangent, 0.0f), World).xyz);
+        output.Bitangent = normalize(mul(float4(input.Bitangent, 0.0f), World).xyz);
+    }
+
+    return output;
 }
 
-PS_LIGHT_CUBE_INPUT VSLightCube( VS_PHONG_INPUT input )
+PS_LIGHT_CUBE_INPUT VSLightCube(VS_PHONG_INPUT input)
 {
-    PS_LIGHT_CUBE_INPUT output = (PS_LIGHT_CUBE_INPUT)0;
-
-    output.Position = mul( input.Position, World );
-    output.Position = mul( output.Position, View );
-    output.Position = mul( output.Position, Projection );
+    PS_LIGHT_CUBE_INPUT output = (PS_LIGHT_CUBE_INPUT) 0;
+    
+    output.Position = mul(input.Position, World);
+    output.Position = mul(output.Position, View);
+    output.Position = mul(output.Position, Projection);
 
     return output;
 }
@@ -130,33 +142,54 @@ PS_LIGHT_CUBE_INPUT VSLightCube( VS_PHONG_INPUT input )
 //--------------------------------------------------------------------------------------
 // Pixel Shader
 //--------------------------------------------------------------------------------------
-float4 PSPhong( PS_PHONG_INPUT input ) : SV_TARGET
+float4 PSPhong(PS_PHONG_INPUT input) : SV_TARGET
 {
-    float3 viewDirection = normalize(CameraPosition.xyz - input.WorldPos);
+    // Normal mapping
     float3 normal = normalize(input.Normal);
-	
-    float3 ambient = float3(0.1f, 0.1f, 0.1f);
-    float3 diffuse = float3(0, 0, 0);
-    float3 specular = float3(0, 0, 0);
     
-    float3 lightDirection = float3(0.0f, 0.0f, 0.0f);
-    float3 reflectDirection = float3(0.0f, 0.0f, 0.0f);
-		
-    for (uint i = 0; i < NUM_LIGHTS; ++i)
+    if (HasNormalMap)
     {
-        lightDirection = normalize(input.WorldPos - LightPositions[i].xyz);
-	
-        diffuse += max(dot(normal, -lightDirection), 0) * LightColors[i].xyz;
-		
-        reflectDirection = reflect(lightDirection, normal);
-		
-        specular += pow(max(dot(reflectDirection, viewDirection), 0), 20.0f) * LightColors[i].xyz;
+        float4 bumpMap = txNormal.Sample(samNormal, input.TexCoord);
+        bumpMap = (bumpMap * 2.0f) - 1.0f;
+        
+        float3 bumpNormal = (bumpMap.x * input.Tangent) + (bumpMap.y * input.Bitangent) + (bumpMap.z * normal);
+        normal = normalize(bumpNormal);
+    }
+    
+    // Ambient
+    float3 ambient = float3(0.0f, 0.0f, 0.0f);
+    
+    for (uint i = 0u; i < NUM_LIGHTS; ++i)
+    {
+        ambient += float4(float3(0.1f, 0.1f, 0.1f) * LightColors[i].xyz, 1.0f);
     }
 
-    return float4(saturate(ambient + diffuse + specular), 1.0f) * txDiffuse.Sample(samLinear, input.TexCoord);
+    // Diffuse
+    float3 diffuse = float3(0.0f, 0.0f, 0.0f);
+    float3 lightDirection = float3(0.0f, 0.0f, 0.0f);
+    
+    for (uint j = 0u; j < NUM_LIGHTS; ++j)
+    {
+        lightDirection = normalize(LightPositions[j].xyz - input.WorldPosition);
+        diffuse += saturate(dot(normal, lightDirection)) * LightColors[j];
+    }
+
+    // Specular
+    float3 specular = float3(0.0f, 0.0f, 0.0f);
+    float3 viewDirection = normalize(CameraPosition.xyz - input.WorldPosition);
+    float3 reflectDirection = float3(0.0f, 0.0f, 0.0f);
+
+    for (uint k = 0; k < NUM_LIGHTS; ++k)
+    {
+        lightDirection = normalize(LightPositions[k].xyz - input.WorldPosition);
+        reflectDirection = reflect(-lightDirection, normal);
+        specular += pow(saturate(dot(reflectDirection, viewDirection)), 20.0f) * LightColors[k];
+    }
+    
+    return float4(ambient + diffuse + specular, 1.0f) * txDiffuse.Sample(samDiffuse, input.TexCoord);
 }
 
-float4 PSLightCube( PS_LIGHT_CUBE_INPUT input ) : SV_TARGET
+float4 PSLightCube(PS_LIGHT_CUBE_INPUT input) : SV_TARGET
 {
     return OutputColor;
 }

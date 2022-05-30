@@ -1,5 +1,5 @@
 //--------------------------------------------------------------------------------------
-// File: VoxelShaders.fx
+// File: VoxelShaders.fxh
 //
 // Copyright (c) Kyung Hee University.
 //--------------------------------------------------------------------------------------
@@ -9,8 +9,10 @@
 //--------------------------------------------------------------------------------------
 // Global Variables
 //--------------------------------------------------------------------------------------
-Texture2D diffuseTexture : register( t0 );
-SamplerState diffuseSampler : register( s0 );
+Texture2D txDiffuse : register( t0 );
+Texture2D txNormal : register( t1 );
+SamplerState samDiffuse : register( s0 );
+SamplerState samNormal : register( s1 );
 
 //--------------------------------------------------------------------------------------
 // Constant Buffer Variables
@@ -39,13 +41,13 @@ cbuffer cbChangeOnResize : register( b1 )
 /*C+C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C
   Cbuffer:  cbChangesEveryFrame
 
-  Summary:  Constant buffer used for world transformation, and the 
-            color of the voxel
+  Summary:  Constant buffer used for world transformation
 C---C---C---C---C---C---C---C---C---C---C---C---C---C---C---C---C-C*/
 cbuffer cbChangesEveryFrame : register( b2 )
 {
     matrix World;
     float4 OutputColor;
+    bool HasNormalMap;
 };
 
 /*C+C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C
@@ -71,6 +73,8 @@ struct VS_INPUT
     float4 Position : POSITION;
     float2 TexCoord : TEXCOORD0;
     float3 Normal : NORMAL;
+    float3 Tangent : TANGENT;
+    float3 Bitangent : BITANGENT;
     row_major matrix Transform : INSTANCE_TRANSFORM;
 };
 
@@ -83,9 +87,11 @@ C---C---C---C---C---C---C---C---C---C---C---C---C---C---C---C---C-C*/
 struct PS_INPUT
 {
     float4 Position : SV_POSITION;
+    float2 TexCoord : TEXCOORD0;
     float3 Normal : NORMAL;
     float3 WorldPosition : WORLDPOS;
-    float2 TexCoord : TEXCOORD0;
+    float3 Tangent : TANGENT;
+    float3 Bitangent : BITANGENT;
 };
 
 //--------------------------------------------------------------------------------------
@@ -94,15 +100,24 @@ struct PS_INPUT
 PS_INPUT VSVoxel(VS_INPUT input)
 {
     PS_INPUT output = (PS_INPUT) 0;
-
+    
     output.Position = mul(input.Position, input.Transform);
     output.Position = mul(output.Position, World);
+    output.WorldPosition = output.Position;
     output.Position = mul(output.Position, View);
     output.Position = mul(output.Position, Projection);
-
+    
     output.TexCoord = input.TexCoord;
-    output.Normal = normalize(mul(float4(input.Normal, 1), World).xyz);
-    output.WorldPosition = mul(input.Position, World);
+    
+    output.Normal = mul(float4(input.Normal, 0.0f), input.Transform).xyz;
+    output.Normal = mul(float4(output.Normal, 0.0f), World).xyz;
+    
+    if (HasNormalMap)
+    {
+        output.Tangent = normalize(mul(float4(input.Tangent, 0.0f), World).xyz);
+        output.Bitangent = normalize(mul(float4(input.Bitangent, 0.0f), World).xyz);
+    }
+    
     return output;
 }
 
@@ -111,21 +126,35 @@ PS_INPUT VSVoxel(VS_INPUT input)
 //--------------------------------------------------------------------------------------
 float4 PSVoxel(PS_INPUT input) : SV_TARGET
 {
-    // ambient
+    // Normal mapping
+    float3 normal = normalize(input.Normal);
+    
+    if (HasNormalMap)
+    {
+        float4 bumpMap = txNormal.Sample(samNormal, input.TexCoord);
+        bumpMap = (bumpMap * 2.0f) - 1.0f;
+        
+        float3 bumpNormal = (bumpMap.x * input.Tangent) + (bumpMap.y * input.Bitangent) + (bumpMap.z * normal);
+        normal = normalize(bumpNormal);
+    }
+    
+    // Ambient
     float3 ambient = float3(0.0f, 0.0f, 0.0f);
-    for (uint i = 0; i < NUM_LIGHTS; ++i)
+    
+    for (uint i = 0u; i < NUM_LIGHTS; ++i)
     {
         ambient += float4(float3(0.1f, 0.1f, 0.1f) * LightColors[i].xyz, 1.0f);
     }
 
-    // diffuse
+    // Diffuse
     float3 lightDirection = float3(0.0f, 0.0f, 0.0f);
     float3 diffuse = float3(0.0f, 0.0f, 0.0f);
-    for (uint j = 0; j < NUM_LIGHTS; ++j)
+    
+    for (uint j = 0u; j < NUM_LIGHTS; ++j)
     {
         lightDirection = normalize(LightPositions[j].xyz - input.WorldPosition);
-        diffuse += saturate(dot(normalize(input.Normal), lightDirection)) * LightColors[j];
+        diffuse += saturate(dot(normal, lightDirection)) * LightColors[j];
     }
     
-    return float4(ambient + diffuse, 1.0f) * OutputColor;
+    return float4(ambient + diffuse, 1.0f) * txDiffuse.Sample(samDiffuse, input.TexCoord);
 }
