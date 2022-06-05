@@ -3,14 +3,15 @@
 //
 // Copyright (c) Microsoft Corporation.
 //--------------------------------------------------------------------------------------
-#define NUM_LIGHTS (2)
+#define NUM_LIGHTS (1)
 
 //--------------------------------------------------------------------------------------
 // Global Variables
 //--------------------------------------------------------------------------------------
 static const unsigned int MAX_NUM_BONES = 256u;
-Texture2D diffuseTexture : register( t0 );
-SamplerState diffuseSampler : register( s0 );
+
+Texture2D diffuseTexture : register(t0);
+SamplerState diffuseSampler : register(s0);
 
 //--------------------------------------------------------------------------------------
 // Constant Buffer Variables
@@ -20,7 +21,7 @@ SamplerState diffuseSampler : register( s0 );
 
   Summary:  Constant buffer used for view transformation
 C---C---C---C---C---C---C---C---C---C---C---C---C---C---C---C---C-C*/
-cbuffer cbChangeOnCameraMovement : register( b0 )
+cbuffer cbChangeOnCameraMovement : register(b0)
 {
     matrix View;
     float4 CameraPosition;
@@ -31,7 +32,7 @@ cbuffer cbChangeOnCameraMovement : register( b0 )
 
   Summary:  Constant buffer used for projection transformation
 C---C---C---C---C---C---C---C---C---C---C---C---C---C---C---C---C-C*/
-cbuffer cbChangeOnResize : register( b1 )
+cbuffer cbChangeOnResize : register(b1)
 {
     matrix Projection;
 };
@@ -41,7 +42,7 @@ cbuffer cbChangeOnResize : register( b1 )
 
   Summary:  Constant buffer used for world transformation
 C---C---C---C---C---C---C---C---C---C---C---C---C---C---C---C---C-C*/
-cbuffer cbChangesEveryFrame : register( b2 )
+cbuffer cbChangesEveryFrame : register(b2)
 {
     matrix World;
     float4 OutputColor;
@@ -52,7 +53,7 @@ cbuffer cbChangesEveryFrame : register( b2 )
 
   Summary:  Constant buffer used for shading
 C---C---C---C---C---C---C---C---C---C---C---C---C---C---C---C---C-C*/
-cbuffer cbLights : register( b3 )
+cbuffer cbLights : register(b3)
 {
     float4 LightPositions[NUM_LIGHTS];
     float4 LightColors[NUM_LIGHTS];
@@ -63,7 +64,7 @@ cbuffer cbLights : register( b3 )
 
   Summary:  Constant buffer used for skinning
 C---C---C---C---C---C---C---C---C---C---C---C---C---C---C---C---C-C*/
-cbuffer cbSkinning : register( b4 )
+cbuffer cbSkinning : register(b4)
 {
     matrix BoneTransforms[MAX_NUM_BONES];
 };
@@ -127,15 +128,15 @@ PS_PHONG_INPUT VSPhong(VS_INPUT input)
 //--------------------------------------------------------------------------------------
 float4 PSPhong(PS_PHONG_INPUT input) : SV_Target
 {
-    // ambient
+    // Ambient
     float3 ambient = float3(0.0f, 0.0f, 0.0f);
 
     for (uint i = 0; i < NUM_LIGHTS; ++i)
     {
-        ambient += float4(float3(0.1f, 0.1f, 0.1f) * LightColors[i].xyz, 1.0f);
+        ambient += float3(0.1f, 0.1f, 0.1f) * LightColors[i].xyz;
     }
 
-    // diffuse
+    // Diffuse
     float3 lightDirection = float3(0.0f, 0.0f, 0.0f);
     float3 diffuse = float3(0.0f, 0.0f, 0.0f);
     for (uint j = 0; j < NUM_LIGHTS; ++j)
@@ -145,7 +146,7 @@ float4 PSPhong(PS_PHONG_INPUT input) : SV_Target
         diffuse += saturate(dot(normalize(input.Normal), lightDirection)) * LightColors[j];
     }
 
-    //specular
+    //Specular
     float3 viewDirection = normalize(CameraPosition.xyz - input.WorldPosition);
     float3 specular = float3(0.0f, 0.0f, 0.0f);
     float3 reflectDirection = float3(0.0f, 0.0f, 0.0f);

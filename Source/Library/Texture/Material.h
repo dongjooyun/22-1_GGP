@@ -1,4 +1,4 @@
-/*+===================================================================
+﻿/*+===================================================================
   File:      MATERIAL.H
 
   Summary:   Material header file contains declaration of class
@@ -6,7 +6,7 @@
 
   Classes:  Material
 
-  ?2022 Kyung Hee University
+  © 2022 Kyung Hee University
 ===================================================================+*/
 #pragma once
 

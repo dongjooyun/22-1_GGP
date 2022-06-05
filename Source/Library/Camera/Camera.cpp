@@ -18,8 +18,8 @@ namespace library
         , m_moveLeftRight(0.0f)
         , m_moveBackForward(0.0f)
         , m_moveUpDown(0.0f)
-        , m_travelSpeed(5.0f)
-        , m_rotationSpeed(0.1f)
+        , m_travelSpeed(10.0f)
+        , m_rotationSpeed(0.01f)
         , m_padding()
         , m_cameraForward(DEFAULT_FORWARD)
         , m_cameraRight(DEFAULT_RIGHT)
@@ -128,7 +128,7 @@ namespace library
         {
             m_moveBackForward += moveSpeed;
         }
-        if (directions.bBack) 
+        if (directions.bBack)
         {
             m_moveBackForward -= moveSpeed;
         }
@@ -136,7 +136,7 @@ namespace library
         {
             m_moveLeftRight += moveSpeed;
         }
-        if (directions.bLeft) 
+        if (directions.bLeft)
         {
             m_moveLeftRight -= moveSpeed;
         }
@@ -145,7 +145,7 @@ namespace library
         {
             m_moveUpDown += moveSpeed;
         }
-        if (directions.bDown) 
+        if (directions.bDown)
         {
             m_moveUpDown -= moveSpeed;
         }

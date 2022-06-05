@@ -1,4 +1,4 @@
-/*+===================================================================
+﻿/*+===================================================================
   File:      V0XEL.H
 
   Summary:   Voxel header file contains declarations of Voxel class
@@ -7,7 +7,7 @@
 
   Classes: Voxel
 
-  ?2022 Kyung Hee University
+  © 2022 Kyung Hee University
 ===================================================================+*/
 #pragma once
 

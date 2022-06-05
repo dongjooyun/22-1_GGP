@@ -1,4 +1,4 @@
-/*+===================================================================
+﻿/*+===================================================================
   File:      RENDERABLE.H
 
   Summary:   Renderable header file contains declarations of
@@ -7,7 +7,7 @@
 
   Classes: Renderable
 
-  ?2022 Kyung Hee University
+  © 2022 Kyung Hee University
 ===================================================================+*/
 #pragma once
 

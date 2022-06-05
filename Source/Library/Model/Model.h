@@ -1,4 +1,4 @@
-/*+===================================================================
+﻿/*+===================================================================
   File:      MODEL.H
 
   Summary:   Model header file contains declarations of
@@ -7,7 +7,7 @@
 
   Classes: Model
 
-  ?2022 Kyung Hee University
+  © 2022 Kyung Hee University
 ===================================================================+*/
 #pragma once
 

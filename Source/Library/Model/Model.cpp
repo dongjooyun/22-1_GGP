@@ -196,8 +196,8 @@ namespace library
         if (m_pScene->HasAnimations())
         {
             FLOAT ticksPerSecond = static_cast<FLOAT>(
-                m_pScene->mAnimations[0]->mTicksPerSecond != 0.0 
-                ? m_pScene->mAnimations[0]->mTicksPerSecond 
+                m_pScene->mAnimations[0]->mTicksPerSecond != 0.0
+                ? m_pScene->mAnimations[0]->mTicksPerSecond
                 : 25.0f
                 );
 

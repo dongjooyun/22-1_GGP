@@ -20,8 +20,8 @@ namespace library
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     VertexShader::VertexShader(_In_ PCWSTR pszFileName, _In_ PCSTR pszEntryPoint, _In_ PCSTR pszShaderModel)
         : Shader(pszFileName, pszEntryPoint, pszShaderModel)
-        , m_vertexLayout(nullptr)
-        , m_vertexShader(nullptr)
+        , m_vertexLayout()
+        , m_vertexShader()
     { }
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M

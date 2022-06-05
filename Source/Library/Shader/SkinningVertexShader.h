@@ -1,4 +1,4 @@
-/*+===================================================================
+﻿/*+===================================================================
   File:      SKINNINGVERTEXSHADER.H
 
   Summary:   SkinningVertexShader header file contains declarations of
@@ -7,7 +7,7 @@
 
   Classes: SkinningVertexShader
 
-  2022 Kyung Hee University
+  © 2022 Kyung Hee University
 ===================================================================+*/
 #pragma once
 

@@ -86,7 +86,7 @@ namespace library
             return hr;
         }
 
-        if ((HasTexture() > 0) && (m_aNormalData.size() == 0))
+        if (m_aNormalData.empty())
         {
             // Compute tangent & bitangent vectors manually
             calculateNormalMapVectors();
@@ -196,11 +196,13 @@ namespace library
 
         for (UINT i = 0; i < uNumFaces; ++i)
         {
-            calculateTangentBitangent(aVertices[aIndices[i * 3]],
-                                      aVertices[aIndices[i * 3 + 1]],
-                                      aVertices[aIndices[i * 3 + 2]],
-                                      tangent,
-                                      bitangent);
+            calculateTangentBitangent(
+                aVertices[aIndices[i * 3]],
+                aVertices[aIndices[i * 3 + 1]],
+                aVertices[aIndices[i * 3 + 2]],
+                tangent,
+                bitangent
+            );
 
             m_aNormalData[aIndices[i * 3]].Tangent = tangent;
             m_aNormalData[aIndices[i * 3]].Bitangent = bitangent;

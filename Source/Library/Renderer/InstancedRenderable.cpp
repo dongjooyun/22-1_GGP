@@ -12,7 +12,7 @@ namespace library
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     InstancedRenderable::InstancedRenderable(_In_ const XMFLOAT4& outputColor)
         : Renderable(outputColor)
-        , m_instanceBuffer(nullptr)
+        , m_instanceBuffer()
         , m_aInstanceData(std::vector<InstanceData>())
         , m_padding()
     {}
@@ -31,7 +31,7 @@ namespace library
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     InstancedRenderable::InstancedRenderable(_In_ std::vector<InstanceData>&& aInstanceData, _In_ const XMFLOAT4& outputColor)
         : Renderable(outputColor)
-        , m_instanceBuffer(nullptr)
+        , m_instanceBuffer()
         , m_aInstanceData(std::move(aInstanceData))
         , m_padding()
     {}
@@ -94,8 +94,8 @@ namespace library
     {
         HRESULT hr = S_OK;
 
-        // Create instance buffer
-        D3D11_BUFFER_DESC bd =
+        // Create the instance buffer
+        D3D11_BUFFER_DESC iBufferDesc =
         {
             .ByteWidth = static_cast<UINT>(sizeof(InstanceData) * m_aInstanceData.size()),
             .Usage = D3D11_USAGE_DEFAULT,
@@ -104,16 +104,14 @@ namespace library
             .MiscFlags = 0u,
             .StructureByteStride = 0u
         };
-
-        D3D11_SUBRESOURCE_DATA initData =
+        D3D11_SUBRESOURCE_DATA iInitData =
         {
             .pSysMem = &m_aInstanceData[0],
             .SysMemPitch = 0u,
             .SysMemSlicePitch = 0u
         };
 
-        hr = pDevice->CreateBuffer(&bd, &initData, m_instanceBuffer.GetAddressOf());
-
+        hr = pDevice->CreateBuffer(&iBufferDesc, &iInitData, &m_instanceBuffer);
         if (FAILED(hr))
         {
             MessageBox(nullptr, L"Cannot create instance buffer!", L"Error", NULL);
