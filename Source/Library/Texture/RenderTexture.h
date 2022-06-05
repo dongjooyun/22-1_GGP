@@ -1,4 +1,4 @@
-/*+===================================================================
+﻿/*+===================================================================
   File:      RENDERTEXTURE.H
 
   Summary:   RenderTexture header file contains declaration of class
@@ -6,7 +6,7 @@
 
   Classes:  RenderTexture
 
-  ?2022 Kyung Hee University
+  © 2022 Kyung Hee University
 ===================================================================+*/
 #pragma once
 
