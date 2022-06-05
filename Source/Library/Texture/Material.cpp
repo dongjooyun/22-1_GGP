@@ -8,8 +8,7 @@ namespace library
 		, pSpecularExponent()
 		, pNormal()
 		, m_szName(szName)
-	{
-	}
+	{}
 
 	HRESULT Material::Initialize(_In_ ID3D11Device* pDevice, _In_ ID3D11DeviceContext* pImmediateContext)
 	{

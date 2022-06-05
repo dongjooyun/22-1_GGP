@@ -37,6 +37,7 @@ namespace library
         inputFile.open(m_filePath.string());
 
         std::string trash;
+
         UINT aDimension[4] = { 0u, };
         UINT uDimensionIdx = 0u;
         while (!inputFile.eof() && uDimensionIdx < ARRAYSIZE(aDimension))
@@ -58,8 +59,9 @@ namespace library
             }
         }
 
-        UINT uColorIdx = 0u;
         XMFLOAT4 color;
+
+        UINT uColorIdx = 0u;
         while (!inputFile.eof() && uColorIdx < aDimension[3])
         {
             inputFile >> color.x >> color.y >> color.z;
@@ -621,5 +623,4 @@ namespace library
     {
         return lerp(x, y, s * s * (3.0f - 2.0f * s));
     }
-
 }

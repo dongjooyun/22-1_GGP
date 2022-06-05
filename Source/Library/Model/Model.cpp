@@ -91,9 +91,7 @@ namespace library
         , m_pScene(nullptr)
         , m_timeSinceLoaded(0.0f)
         , m_globalInverseTransform(XMMatrixIdentity())
-    {
-        // empty
-    }
+    {}
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
       Method:   Model::Initialize
@@ -115,13 +113,10 @@ namespace library
     {
         HRESULT hr = S_OK;
 
-        // Read the 3D model file
-        m_pScene = sm_pImporter->ReadFile(
-            m_filePath.string().c_str(),
-            ASSIMP_LOAD_FLAGS
-        );
+        // Read 3D model file
+        m_pScene = sm_pImporter->ReadFile(m_filePath.string().c_str(), ASSIMP_LOAD_FLAGS);
 
-        // Initialize the model
+        // Initialize model
         if (m_pScene)
         {
             XMVECTOR det = XMMatrixDeterminant(m_world);
@@ -138,7 +133,7 @@ namespace library
             OutputDebugString(L"\n");
         }
 
-        // Create the animation buffer
+        // Create animation buffer
         D3D11_BUFFER_DESC aBufferDesc =
         {
             .ByteWidth = static_cast<UINT>(sizeof(AnimationData) * m_aAnimationData.size()),
@@ -148,25 +143,22 @@ namespace library
             .MiscFlags = 0u,
             .StructureByteStride = 0u
         };
+
         D3D11_SUBRESOURCE_DATA aInitData =
         {
             .pSysMem = &m_aAnimationData[0],
             .SysMemPitch = 0u,
             .SysMemSlicePitch = 0u
         };
+
         hr = pDevice->CreateBuffer(&aBufferDesc, &aInitData, m_animationBuffer.GetAddressOf());
         if (FAILED(hr))
         {
-            MessageBox(
-                nullptr,
-                L"Call to CreateAnimationBuffer failed!",
-                L"Game Graphics Programming",
-                NULL
-            );
+            MessageBox(nullptr, L"Cannot create animation buffer!", L"Error", NULL);
             return hr;
         }
 
-        // Create the skinning constant buffer
+        // Create skinning constant buffer
         D3D11_BUFFER_DESC scBufferDesc =
         {
             .ByteWidth = static_cast<UINT>(sizeof(CBSkinning)),
@@ -176,15 +168,11 @@ namespace library
             .MiscFlags = 0u,
             .StructureByteStride = 0u
         };
+
         hr = pDevice->CreateBuffer(&scBufferDesc, nullptr, m_skinningConstantBuffer.GetAddressOf());
         if (FAILED(hr))
         {
-            MessageBox(
-                nullptr,
-                L"Call to CreateSkinningConstantBuffer failed!",
-                L"Game Graphics Programming",
-                NULL
-            );
+            MessageBox(nullptr, L"Cannot create skinning constant buffer!", L"Error", NULL);
             return hr;
         }
 
@@ -207,7 +195,12 @@ namespace library
 
         if (m_pScene->HasAnimations())
         {
-            FLOAT ticksPerSecond = static_cast<FLOAT>(m_pScene->mAnimations[0]->mTicksPerSecond != 0.0 ? m_pScene->mAnimations[0]->mTicksPerSecond : 25.0f);
+            FLOAT ticksPerSecond = static_cast<FLOAT>(
+                m_pScene->mAnimations[0]->mTicksPerSecond != 0.0 
+                ? m_pScene->mAnimations[0]->mTicksPerSecond 
+                : 25.0f
+                );
+
             FLOAT timeInTicks = m_timeSinceLoaded * ticksPerSecond;
             FLOAT animationTimeTicks = fmod(timeInTicks, static_cast<FLOAT>(m_pScene->mAnimations[0]->mDuration));
             if (m_pScene->mRootNode != nullptr)
@@ -615,10 +608,10 @@ namespace library
     {
         HRESULT hr = S_OK;
 
-        // Extract the directory part from the file name
+        // Extract directory part from the file name
         std::filesystem::path parentDirectory = filePath.parent_path();
 
-        // Initialize the materials
+        // Initialize materials
         for (UINT i = 0u; i < pScene->mNumMaterials; ++i)
         {
             const aiMaterial* pMaterial = pScene->mMaterials[i];
@@ -691,7 +684,7 @@ namespace library
     {
         const aiVector3D zero3d(0.0f, 0.0f, 0.0f);
 
-        // Populate the vertex attribute vector
+        // Populate vertex attribute vector
         for (UINT i = 0u; i < pMesh->mNumVertices; ++i)
         {
             const aiVector3D& position = pMesh->mVertices[i];
@@ -718,7 +711,7 @@ namespace library
             m_aNormalData.push_back(normalData);
         }
 
-        // Populate the index buffer
+        // Populate index buffer
         for (UINT i = 0u; i < pMesh->mNumFaces; ++i)
         {
             const aiFace& face = pMesh->mFaces[i];
@@ -768,6 +761,7 @@ namespace library
         FLOAT deltaTime = t2 - t1;
         FLOAT factor = (animationTimeTicks - t1) / deltaTime;
         assert(factor >= 0.0f && factor <= 1.0f);
+
         const aiVector3D& start = pNodeAnim->mPositionKeys[uPositionIndex].mValue;
         const aiVector3D& end = pNodeAnim->mPositionKeys[uNextPositionIndex].mValue;
         aiVector3D delta = end - start;
@@ -797,15 +791,18 @@ namespace library
         UINT uRotationIndex = findRotation(animationTimeTicks, pNodeAnim);
         UINT uNextRotationIndex = uRotationIndex + 1;
         assert(uNextRotationIndex < pNodeAnim->mNumRotationKeys);
+
         FLOAT t1 = static_cast<FLOAT>(pNodeAnim->mRotationKeys[uRotationIndex].mTime);
         FLOAT t2 = static_cast<FLOAT>(pNodeAnim->mRotationKeys[uNextRotationIndex].mTime);
         FLOAT deltaTime = t2 - t1;
         FLOAT factor = (animationTimeTicks - t1) / deltaTime;
         assert(factor >= 0.0f && factor <= 1.0f);
+
         aiQuaternion outQ;
         const aiQuaternion& startRotationQ = pNodeAnim->mRotationKeys[uRotationIndex].mValue;
         const aiQuaternion& endRotationQ = pNodeAnim->mRotationKeys[uNextRotationIndex].mValue;
         aiQuaternion::Interpolate(outQ, startRotationQ, endRotationQ, factor);
+
         outQ = startRotationQ;
         outQ.Normalize();
         outQuaternion = ConvertQuaternionToVector(outQ);
@@ -834,11 +831,13 @@ namespace library
         UINT uScalingIndex = findScaling(animationTimeTicks, pNodeAnim);
         UINT uNextScalingIndex = uScalingIndex + 1;
         assert(uNextScalingIndex < pNodeAnim->mNumScalingKeys);
+
         FLOAT t1 = static_cast<FLOAT>(pNodeAnim->mScalingKeys[uScalingIndex].mTime);
         FLOAT t2 = static_cast<FLOAT>(pNodeAnim->mScalingKeys[uNextScalingIndex].mTime);
         FLOAT deltaTime = t2 - t1;
         FLOAT factor = (animationTimeTicks - t1) / deltaTime;
         assert(factor >= 0.0f && factor <= 1.0f);
+
         const aiVector3D& start = pNodeAnim->mScalingKeys[uScalingIndex].mValue;
         const aiVector3D& end = pNodeAnim->mScalingKeys[uNextScalingIndex].mValue;
         aiVector3D delta = end - start;
@@ -1089,22 +1088,21 @@ namespace library
 
         if (pNodeAnim)
         {
-            // Interpolate scaling and generate scaling transformation matrix
+            // Scaling
             XMFLOAT3 scaling = XMFLOAT3();
             interpolateScaling(scaling, animationTimeTicks, pNodeAnim);
             XMMATRIX scalingM = XMMatrixScaling(scaling.x, scaling.y, scaling.z);
 
-            // Interpolate rotation and generate rotation transformation matrix
+            // Rotation
             XMVECTOR rotation = XMVECTOR();
             interpolateRotation(rotation, animationTimeTicks, pNodeAnim);
             XMMATRIX rotationM = XMMatrixRotationQuaternion(rotation);
 
-            // Interpolate translation and generate translation transformation matrix
+            // Translation
             XMFLOAT3 translation = XMFLOAT3();
             interpolatePosition(translation, animationTimeTicks, pNodeAnim);
             XMMATRIX translationM = XMMatrixTranslation(translation.x, translation.y, translation.z);
 
-            // Combine the above transformations
             NodeTransform = scalingM * rotationM * translationM;
         }
 

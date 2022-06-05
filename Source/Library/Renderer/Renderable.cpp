@@ -36,7 +36,7 @@ namespace library
         , m_padding()
         , m_world(XMMatrixIdentity())
         , m_bHasNormalMap(FALSE)
-    { }
+    {}
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
       Method:   Renderable::initialize
@@ -58,10 +58,11 @@ namespace library
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     HRESULT Renderable::initialize(_In_ ID3D11Device* pDevice, _In_ ID3D11DeviceContext* pImmediateContext)
     {
+        UNREFERENCED_PARAMETER(pImmediateContext);
         HRESULT hr = S_OK;
 
-        // Create the vertex buffer
-        D3D11_BUFFER_DESC vertexBufferDesc =
+        // Create vertex buffer
+        D3D11_BUFFER_DESC vBufferDesc =
         {
             .ByteWidth = sizeof(SimpleVertex) * GetNumVertices(),
             .Usage = D3D11_USAGE_DEFAULT,
@@ -71,14 +72,14 @@ namespace library
             .StructureByteStride = 0u
         };
 
-        D3D11_SUBRESOURCE_DATA vertexInitData =
+        D3D11_SUBRESOURCE_DATA vInitData =
         {
             .pSysMem = getVertices(),
             .SysMemPitch = 0u,
             .SysMemSlicePitch = 0u
         };
 
-        hr = pDevice->CreateBuffer(&vertexBufferDesc, &vertexInitData, m_vertexBuffer.GetAddressOf());
+        hr = pDevice->CreateBuffer(&vBufferDesc, &vInitData, m_vertexBuffer.GetAddressOf());
         if (FAILED(hr))
         {
             MessageBox(nullptr, L"Cannot create vertex buffer!", L"Error", NULL);
@@ -87,7 +88,7 @@ namespace library
 
         if ((HasTexture() > 0) && (m_aNormalData.size() == 0))
         {
-            // Compute tangent and bitangent vectors manually
+            // Compute tangent & bitangent vectors manually
             calculateNormalMapVectors();
         }
 
@@ -116,8 +117,8 @@ namespace library
             return hr;
         }
 
-        // Create the index buffer
-        D3D11_BUFFER_DESC indexBufferDesc =
+        // Create index buffer
+        D3D11_BUFFER_DESC iBufferDesc =
         {
             .ByteWidth = static_cast<UINT>(sizeof(WORD)) * GetNumIndices(),
             .Usage = D3D11_USAGE_DEFAULT,
@@ -127,27 +128,27 @@ namespace library
             .StructureByteStride = 0u
         };
 
-        D3D11_SUBRESOURCE_DATA indexInitData =
+        D3D11_SUBRESOURCE_DATA iInitData =
         {
             .pSysMem = getIndices(),
             .SysMemPitch = 0u,
             .SysMemSlicePitch = 0u
         };
 
-        hr = pDevice->CreateBuffer(&indexBufferDesc, &indexInitData, m_indexBuffer.GetAddressOf());
+        hr = pDevice->CreateBuffer(&iBufferDesc, &iInitData, m_indexBuffer.GetAddressOf());
         if (FAILED(hr))
         {
             MessageBox(nullptr, L"Cannot create index buffer!", L"Error", NULL);
             return hr;
         }
 
-        // Create the constant buffer
-        D3D11_BUFFER_DESC constantBufferDesc =
+        // Create constant buffer
+        D3D11_BUFFER_DESC cBufferDesc =
         {
             .ByteWidth = sizeof(CBChangesEveryFrame),
             .Usage = D3D11_USAGE_DEFAULT,
             .BindFlags = D3D11_BIND_CONSTANT_BUFFER,
-            .CPUAccessFlags = 0,
+            .CPUAccessFlags = 0u,
             .MiscFlags = 0u,
             .StructureByteStride = 0u
         };
@@ -165,8 +166,7 @@ namespace library
             .SysMemSlicePitch = 0u
         };
 
-        hr = pDevice->CreateBuffer(&constantBufferDesc, &cInitData, m_constantBuffer.GetAddressOf());
-
+        hr = pDevice->CreateBuffer(&cBufferDesc, &cInitData, m_constantBuffer.GetAddressOf());
         if (FAILED(hr))
         {
             MessageBox(nullptr, L"Cannot create constant buffer!", L"Error", NULL);
@@ -229,12 +229,18 @@ namespace library
                 XMFLOAT3& bitangent
                   Calculated bitangent vector
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-    void Renderable::calculateTangentBitangent(_In_ const SimpleVertex& v1, _In_ const SimpleVertex& v2, _In_ const SimpleVertex& v3, _Out_ XMFLOAT3& tangent, _Out_ XMFLOAT3& bitangent)
+    void Renderable::calculateTangentBitangent(
+        _In_ const SimpleVertex& v1, 
+        _In_ const SimpleVertex& v2, 
+        _In_ const SimpleVertex& v3, 
+        _Out_ XMFLOAT3& tangent, 
+        _Out_ XMFLOAT3& bitangent
+    )
     {
         XMFLOAT3 vector1, vector2;
         XMFLOAT2 tuVector, tvVector;
 
-        // Calculate the two vectors for this face.
+        // Calculate two vectors for this face
         vector1.x = v2.Position.x - v1.Position.x;
         vector1.y = v2.Position.y - v1.Position.y;
         vector1.z = v2.Position.z - v1.Position.z;
@@ -243,17 +249,17 @@ namespace library
         vector2.y = v3.Position.y - v1.Position.y;
         vector2.z = v3.Position.z - v1.Position.z;
 
-        // Calculate the tu and tv texture space vectors.
+        // Calculate tu & tv texture space vectors
         tuVector.x = v2.TexCoord.x - v1.TexCoord.x;
         tvVector.x = v2.TexCoord.y - v1.TexCoord.y;
 
         tuVector.y = v3.TexCoord.x - v1.TexCoord.x;
         tvVector.y = v3.TexCoord.y - v1.TexCoord.y;
 
-        // Calculate the denominator of the tangent/binormal equation.
+        // Calculate denominator of tangent/binormal equation
         float den = 1.0f / (tuVector.x * tvVector.y - tuVector.y * tvVector.x);
 
-        // Calculate the cross products and multiply by the coefficient to get the tangent and binormal.
+        // Calculate cross products & multiply by the coefficient
         tangent.x = (tvVector.y * vector1.x - tvVector.x * vector2.x) * den;
         tangent.y = (tvVector.y * vector1.y - tvVector.x * vector2.y) * den;
         tangent.z = (tvVector.y * vector1.z - tvVector.x * vector2.z) * den;
@@ -262,23 +268,22 @@ namespace library
         bitangent.y = (tuVector.x * vector2.y - tuVector.y * vector1.y) * den;
         bitangent.z = (tuVector.x * vector2.z - tuVector.y * vector1.z) * den;
 
-        // Calculate the length of this normal.
+        // Calculate length of normal
         float length = sqrt((tangent.x * tangent.x) + (tangent.y * tangent.y) + (tangent.z * tangent.z));
 
-        // Normalize the normal and then store it
+        // Normalize normal & store
         tangent.x = tangent.x / length;
         tangent.y = tangent.y / length;
         tangent.z = tangent.z / length;
 
-        // Calculate the length of this normal.
+        // Calculate length of binormal
         length = sqrt((bitangent.x * bitangent.x) + (bitangent.y * bitangent.y) + (bitangent.z * bitangent.z));
 
-        // Normalize the normal and then store it
+        // Normalize binormal & store
         bitangent.x = bitangent.x / length;
         bitangent.y = bitangent.y / length;
         bitangent.z = bitangent.z / length;
     }
-
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
      Method:   Renderable::SetVertexShader
@@ -500,7 +505,6 @@ namespace library
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     void Renderable::RotateX(_In_ FLOAT angle)
     {
-        // m_world *= x-axis rotation by angle matrix
         m_world *= XMMatrixRotationX(angle);
     }
 
@@ -513,7 +517,6 @@ namespace library
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     void Renderable::RotateY(_In_ FLOAT angle)
     {
-        // m_world *= y-axis rotation by angle matrix
         m_world *= XMMatrixRotationY(angle);
     }
 
@@ -526,7 +529,6 @@ namespace library
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     void Renderable::RotateZ(_In_ FLOAT angle)
     {
-        // m_world *= z-axis rotation by angle matrix
         m_world *= XMMatrixRotationZ(angle);
     }
 
@@ -543,7 +545,6 @@ namespace library
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     void Renderable::RotateRollPitchYaw(_In_ FLOAT pitch, _In_ FLOAT yaw, _In_ FLOAT roll)
     {
-        // m_world *= x, y, z-axis rotation by pitch, yaw, roll matrix
         m_world *= XMMatrixRotationRollPitchYaw(pitch, yaw, roll);
     }
 
@@ -560,7 +561,6 @@ namespace library
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     void Renderable::Scale(_In_ FLOAT scaleX, _In_ FLOAT scaleY, _In_ FLOAT scaleZ)
     {
-        // m_world *= x, y, z-axis scaling by scale factor matrix
         m_world *= XMMatrixScaling(scaleX, scaleY, scaleZ);
     }
 
@@ -573,7 +573,6 @@ namespace library
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     void Renderable::Translate(_In_ const XMVECTOR& offset)
     {
-        // m_world *= translate by offset vector matrix
         m_world *= XMMatrixTranslationFromVector(offset);
     }
 
