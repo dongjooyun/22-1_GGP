@@ -119,10 +119,7 @@
   <ItemGroup>
     <FxCompile Include="Shaders\CubeMap_PS.hlsl" />
     <FxCompile Include="Shaders\CubeMap_VS.hlsl" />
-    <FxCompile Include="Shaders\PS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Effect</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Effect</ShaderType>
-    </FxCompile>
+    <FxCompile Include="Shaders\PS.hlsl" />
     <FxCompile Include="Shaders\VS.hlsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

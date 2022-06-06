@@ -28,7 +28,7 @@ namespace library
         : m_filePath(filePath)
         , m_voxels()
         , m_renderables()
-        , m_aPointLights{ nullptr, nullptr }
+        , m_aPointLights{ nullptr }
         , m_vertexShaders()
         , m_pixelShaders()
         , m_skyBox()
@@ -167,9 +167,79 @@ namespace library
                 ID3D11DeviceContext* pImmediateContext
                   The Direct3D context to set buffers
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-    /*--------------------------------------------------------------------
-      TODO: Scene::Initialize definition (remove the comment)
-    --------------------------------------------------------------------*/
+    HRESULT Scene::Initialize(_In_ ID3D11Device* pDevice, _In_ ID3D11DeviceContext* pImmediateContext)
+    {
+        for (auto voxel : m_voxels)
+        {
+            HRESULT hr = voxel->Initialize(pDevice, pImmediateContext);
+            if (FAILED(hr))
+            {
+                return hr;
+            }
+        }
+
+        for (auto it = m_vertexShaders.begin(); it != m_vertexShaders.end(); ++it)
+        {
+            HRESULT hr = it->second->Initialize(pDevice);
+            if (FAILED(hr))
+            {
+                return hr;
+            }
+        }
+
+        for (auto it = m_pixelShaders.begin(); it != m_pixelShaders.end(); ++it)
+        {
+            HRESULT hr = it->second->Initialize(pDevice);
+            if (FAILED(hr))
+            {
+                return hr;
+            }
+        }
+
+        for (auto it = m_renderables.begin(); it != m_renderables.end(); ++it)
+        {
+            HRESULT hr = it->second->Initialize(pDevice, pImmediateContext);
+            if (FAILED(hr))
+            {
+                return hr;
+            }
+        }
+
+        for (auto it = m_models.begin(); it != m_models.end(); ++it)
+        {
+            HRESULT hr = it->second->Initialize(pDevice, pImmediateContext);
+            if (FAILED(hr))
+            {
+                return hr;
+            }
+
+            for (int i = 0; i < it->second->GetNumMaterials(); ++i)
+            {
+                AddMaterial(it->second->GetMaterial(i));
+            }
+        }
+
+        for (auto it = m_materials.begin(); it != m_materials.end(); ++it)
+        {
+            HRESULT hr = it->second->Initialize(pDevice, pImmediateContext);
+            if (FAILED(hr))
+            {
+                return hr;
+            }
+        }
+
+        if (m_skyBox)
+        {
+            HRESULT hr = m_skyBox->Initialize(pDevice, pImmediateContext);
+
+            if (FAILED(hr))
+            {
+                return hr;
+            }
+        }
+
+        return S_OK;
+    }
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
       Method:   Scene::AddVoxel
@@ -328,6 +398,18 @@ namespace library
         return S_OK;
     }
 
+    HRESULT Scene::AddMaterial(_In_ const std::shared_ptr<Material>& material)
+    {
+        if (m_materials.contains(material->GetName()))
+        {
+            return E_FAIL;
+        }
+
+        m_materials[material->GetName()] = material;
+
+        return S_OK;
+    }
+
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
       Method:   Scene::AddSkyBox
 
@@ -341,9 +423,18 @@ namespace library
       Returns:  HRESULT
                   Status code
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-    /*--------------------------------------------------------------------
-      TODO: Scene::AddSkyBox definition (remove the comment)
-    --------------------------------------------------------------------*/
+    HRESULT Scene::AddSkyBox(_In_ const std::shared_ptr<Skybox>& skybox)
+    {
+        if (skybox == nullptr)
+        {
+            return E_INVALIDARG;
+        }
+        else
+        {
+            m_skyBox = skybox;
+            return S_OK;
+        }
+    }
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
       Method:   Scene::Update
@@ -354,9 +445,25 @@ namespace library
       Args:     FLOAT deltaTime
                   Time difference of a frame
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-    /*--------------------------------------------------------------------
-      TODO: Scene::Update definition (remove the comment)
-    --------------------------------------------------------------------*/
+    void Scene::Update(_In_ FLOAT deltaTime)
+    {
+        for (auto it = m_renderables.begin(); it != m_renderables.end(); ++it)
+        {
+            it->second->Update(deltaTime);
+        }
+
+        for (auto it = m_models.begin(); it != m_models.end(); ++it)
+        {
+            it->second->Update(deltaTime);
+        }
+
+        for (UINT lightIdx = 0; lightIdx < NUM_LIGHTS; ++lightIdx)
+        {
+            m_aPointLights[lightIdx]->Update(deltaTime);
+        }
+
+        m_skyBox->Update(deltaTime);
+    }
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
       Method:   Scene::GetVoxels
@@ -370,7 +477,6 @@ namespace library
     {
         return m_voxels;
     }
-
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
       Method:   Scene::GetRenderables
@@ -442,6 +548,11 @@ namespace library
         return m_pixelShaders;
     }
 
+    std::unordered_map<std::wstring, std::shared_ptr<Material>>& Scene::GetMaterials()
+    {
+        return m_materials;
+    }
+
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
       Method:   Scene::GetSkyBox
 
@@ -450,9 +561,10 @@ namespace library
       Returns:  std::shared_ptr<Skybox>&
                   Sky box
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-    /*--------------------------------------------------------------------
-      TODO: Scene::GetSkyBox definition (remove the comment)
-    --------------------------------------------------------------------*/
+    std::shared_ptr<Skybox>& Scene::GetSkyBox()
+    {
+        return m_skyBox;
+    }
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
       Method:   Scene::GetFilePath
@@ -643,6 +755,21 @@ namespace library
         for (std::shared_ptr<Voxel>& voxel : m_voxels)
         {
             voxel->SetPixelShader(m_pixelShaders[pszPixelShaderName]);
+        }
+
+        return S_OK;
+    }
+
+    HRESULT Scene::SetMaterialOfVoxel(_In_ PCWSTR pszMaterialName)
+    {
+        if (!m_materials.contains(pszMaterialName))
+        {
+            return E_FAIL;
+        }
+
+        for (std::shared_ptr<Voxel>& voxel : m_voxels)
+        {
+            voxel->AddMaterial(m_materials[pszMaterialName]);
         }
 
         return S_OK;

@@ -9,9 +9,8 @@
 // Global Variables
 //--------------------------------------------------------------------------------------
 static const unsigned int MAX_NUM_BONES = 256u;
-
-Texture2D diffuseTexture : register(t0);
-SamplerState diffuseSampler : register(s0);
+Texture2D txDiffuse : register(t0);
+SamplerState samLinear : register(s0);
 
 //--------------------------------------------------------------------------------------
 // Constant Buffer Variables
@@ -46,6 +45,7 @@ cbuffer cbChangesEveryFrame : register(b2)
 {
     matrix World;
     float4 OutputColor;
+    bool HasNormalMap;
 };
 
 /*C+C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C
@@ -103,13 +103,14 @@ struct PS_PHONG_INPUT
 //--------------------------------------------------------------------------------------
 PS_PHONG_INPUT VSPhong(VS_INPUT input)
 {
+    PS_PHONG_INPUT output = (PS_PHONG_INPUT) 0;
+
     matrix skinTransform = (matrix) 0;
     skinTransform += mul(input.BoneWeights.x, BoneTransforms[input.BoneIndices.x]);
     skinTransform += mul(input.BoneWeights.y, BoneTransforms[input.BoneIndices.y]);
     skinTransform += mul(input.BoneWeights.z, BoneTransforms[input.BoneIndices.z]);
     skinTransform += mul(input.BoneWeights.w, BoneTransforms[input.BoneIndices.w]);
 
-    PS_PHONG_INPUT output = (PS_PHONG_INPUT) 0;
     output.Position = mul(input.Position, skinTransform);
     output.WorldPosition = mul(output.Position, World);
     output.Position = mul(output.Position, World);
@@ -118,46 +119,53 @@ PS_PHONG_INPUT VSPhong(VS_INPUT input)
 
     output.TexCoord = input.TexCoord;
 
-    output.Normal = mul(float4(input.Normal, 0.0f), World).xyz;
+    output.Normal = mul(float4(input.Normal, 0), skinTransform);
+    output.Normal = normalize(mul(float4(output.Normal, 0), World).xyz);
 
     return output;
 }
+
 
 //--------------------------------------------------------------------------------------
 // Pixel Shader
 //--------------------------------------------------------------------------------------
 float4 PSPhong(PS_PHONG_INPUT input) : SV_Target
 {
-    // Ambient
+    // ambient light
     float3 ambient = float3(0.0f, 0.0f, 0.0f);
 
     for (uint i = 0; i < NUM_LIGHTS; ++i)
     {
-        ambient += float3(0.1f, 0.1f, 0.1f) * LightColors[i].xyz;
+        ambient = float3(0.2f, 0.2f, 0.2f) // ambience term
+            * LightColors[i] // color of the light
+            * txDiffuse.Sample(samLinear, input.TexCoord);
     }
 
-    // Diffuse
-    float3 lightDirection = float3(0.0f, 0.0f, 0.0f);
+    // diffuse light
     float3 diffuse = float3(0.0f, 0.0f, 0.0f);
-    for (uint j = 0; j < NUM_LIGHTS; ++j)
-    {
-        lightDirection = normalize(LightPositions[j].xyz - input.WorldPosition);
 
-        diffuse += saturate(dot(normalize(input.Normal), lightDirection)) * LightColors[j];
+    for (uint i = 0; i < NUM_LIGHTS; ++i)
+    {
+        float3 lightDirection = normalize(LightPositions[i].xyz - input.WorldPosition);
+
+        diffuse += max(dot(input.Normal, lightDirection), 0.0f) // lambertian term
+            * LightColors[i] // color of the light
+            * txDiffuse.Sample(samLinear, input.TexCoord); // color sampled from the texture
     }
 
-    //Specular
+    //specular light
     float3 viewDirection = normalize(CameraPosition.xyz - input.WorldPosition);
     float3 specular = float3(0.0f, 0.0f, 0.0f);
-    float3 reflectDirection = float3(0.0f, 0.0f, 0.0f);
-    for (uint k = 0; k < NUM_LIGHTS; ++k)
-    {
-        lightDirection = normalize(LightPositions[k].xyz - input.WorldPosition);
-        
-        reflectDirection = reflect(-lightDirection, input.Normal);
 
-        specular += pow(saturate(dot(reflectDirection, viewDirection)), 20.0f) * LightColors[k];
+    for (uint i = 0; i < NUM_LIGHTS; ++i)
+    {
+        float3 lightDirection = normalize(LightPositions[i].xyz - input.WorldPosition);
+        float3 reflectDirection = reflect(-lightDirection, input.Normal);
+
+        specular += pow(saturate(dot(reflectDirection, viewDirection)), 40.0f)
+            * LightColors[i] // color of the light
+            * txDiffuse.Sample(samLinear, input.TexCoord); // color sampled from the texture
     }
-    
-    return float4(ambient + diffuse + specular, 1.0f) * diffuseTexture.Sample(diffuseSampler, input.TexCoord);
+
+    return float4(ambient + diffuse + specular, 1.0f);
 }

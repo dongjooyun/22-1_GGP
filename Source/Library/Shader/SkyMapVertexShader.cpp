@@ -16,9 +16,9 @@ namespace library
                   Specifies the shader target or set of shader features
                   to compile against
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-    /*--------------------------------------------------------------------
-      TODO: SkyMapVertexShader::SkyMapVertexShader definition (remove the comment)
-    --------------------------------------------------------------------*/
+    SkyMapVertexShader::SkyMapVertexShader(_In_ PCWSTR pszFileName, _In_ PCSTR pszEntryPoint, _In_ PCSTR pszShaderModel)
+        : VertexShader(pszFileName, pszEntryPoint, pszShaderModel)
+    {}
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
       Method:   SkyMapVertexShader::Initialize
@@ -31,7 +31,42 @@ namespace library
       Returns:  HRESULT
                   Status code
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-    /*--------------------------------------------------------------------
-      TODO: SkyMapVertexShader::Initialize definition (remove the comment)
-    --------------------------------------------------------------------*/
+    HRESULT SkyMapVertexShader::Initialize(_In_ ID3D11Device* pDevice)
+    {
+        HRESULT hr = S_OK;
+
+        // Compile the vertex shader
+        ComPtr<ID3DBlob> pVSBlob = nullptr;
+        hr = compile(pVSBlob.GetAddressOf());
+
+        if (FAILED(hr))
+        {
+            MessageBox(nullptr, L"The FX file cannot be compiled.  Please run this executable from the directory that contains the FX file.", L"Error", MB_OK);
+            return hr;
+        }
+
+        // Create the vertex shader
+        hr = pDevice->CreateVertexShader(pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), nullptr, m_vertexShader.GetAddressOf());
+
+        if (FAILED(hr))
+        {
+            return hr;
+        }
+
+        // Create the input layout
+        D3D11_INPUT_ELEMENT_DESC aLayouts[] =
+        {
+            { "POSITION", 0u, DXGI_FORMAT_R32G32B32_FLOAT, 0u, 0u, D3D11_INPUT_PER_VERTEX_DATA, 0u }
+        };
+        UINT numElements = ARRAYSIZE(aLayouts);
+
+        hr = pDevice->CreateInputLayout(aLayouts, numElements, pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), m_vertexLayout.GetAddressOf());
+
+        if (FAILED(hr))
+        {
+            return hr;
+        }
+
+        return S_OK;
+    }
 }

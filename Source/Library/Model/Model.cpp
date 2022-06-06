@@ -88,7 +88,7 @@ namespace library
         , m_aBoneInfo(std::vector<BoneInfo>())
         , m_aTransforms(std::vector<XMMATRIX>())
         , m_boneNameToIndexMap(std::unordered_map<std::string, UINT>())
-        , m_pScene(nullptr)
+        , m_pScene()
         , m_timeSinceLoaded(0.0f)
         , m_globalInverseTransform(XMMatrixIdentity())
     {}
@@ -115,22 +115,35 @@ namespace library
 
         // Read 3D model file
         m_pScene = sm_pImporter->ReadFile(m_filePath.string().c_str(), ASSIMP_LOAD_FLAGS);
+        m_pScene = sm_pImporter->ReadFile(m_filePath.string().c_str()
+                                         , aiProcess_Triangulate 
+                                         | aiProcess_GenSmoothNormals
+                                         | aiProcess_CalcTangentSpace 
+                                         | aiProcess_ConvertToLeftHanded
+                                         );
 
         // Initialize model
         if (m_pScene)
         {
-            XMVECTOR det = XMMatrixDeterminant(m_world);
-            m_globalInverseTransform = XMMatrixInverse(&det, m_world);
+            m_globalInverseTransform = ConvertMatrix(m_pScene->mRootNode->mTransformation);
+            XMVECTOR determinant = XMMatrixDeterminant(m_globalInverseTransform);
+            m_globalInverseTransform = XMMatrixInverse(&determinant, m_globalInverseTransform);
+            
             hr = initFromScene(pDevice, pImmediateContext, m_pScene, m_filePath);
+            if (FAILED(hr))
+            {
+                return hr;
+            }
         }
         else
         {
-            hr = E_FAIL;
             OutputDebugString(L"Error parsing ");
             OutputDebugString(m_filePath.c_str());
             OutputDebugString(L": ");
             OutputDebugStringA(sm_pImporter->GetErrorString());
             OutputDebugString(L"\n");
+
+            return E_FAIL;
         }
 
         // Create animation buffer
@@ -203,7 +216,8 @@ namespace library
 
             FLOAT timeInTicks = m_timeSinceLoaded * ticksPerSecond;
             FLOAT animationTimeTicks = fmod(timeInTicks, static_cast<FLOAT>(m_pScene->mAnimations[0]->mDuration));
-            if (m_pScene->mRootNode != nullptr)
+
+            if (m_pScene->mRootNode)
             {
                 readNodeHierarchy(animationTimeTicks, m_pScene->mRootNode, XMMatrixIdentity());
                 m_aTransforms.resize(m_aBoneInfo.size());
