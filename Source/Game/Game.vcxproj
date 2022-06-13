@@ -110,6 +110,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\CubeMap.fxh" />
+    <None Include="Shaders\EnvShaders.fxh" />
     <None Include="Shaders\PhongShaders.fxh" />
     <None Include="Shaders\Shaders.fxh" />
     <None Include="Shaders\ShadowShaders.fxh" />

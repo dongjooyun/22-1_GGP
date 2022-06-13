@@ -94,7 +94,7 @@ namespace library
     {
         HRESULT hr = S_OK;
 
-        // Create the instance buffer
+        // Create instance buffer
         D3D11_BUFFER_DESC iBufferDesc =
         {
             .ByteWidth = static_cast<UINT>(sizeof(InstanceData) * m_aInstanceData.size()),

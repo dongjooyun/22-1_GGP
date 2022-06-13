@@ -22,7 +22,7 @@ namespace library
         : Shader(pszFileName, pszEntryPoint, pszShaderModel)
         , m_vertexLayout()
         , m_vertexShader()
-    { }
+    {}
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
       Method:   VertexShader::Initialize
@@ -39,7 +39,7 @@ namespace library
     {
         HRESULT hr = S_OK;
 
-        // Compile the vertex shader
+        // Compile vertex shader
         ComPtr<ID3DBlob> pVSBlob = nullptr;
         hr = compile(pVSBlob.GetAddressOf());
         if (FAILED(hr))
@@ -48,7 +48,7 @@ namespace library
             return hr;
         }
 
-        // Create the vertex shader
+        // Create vertex shader
         hr = pDevice->CreateVertexShader(pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), nullptr, m_vertexShader.GetAddressOf());
         if (FAILED(hr))
         {
@@ -56,7 +56,7 @@ namespace library
             return hr;
         }
 
-        // Create the input layout
+        // Create input layout
         D3D11_INPUT_ELEMENT_DESC aLayouts[] =
         {
             { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },

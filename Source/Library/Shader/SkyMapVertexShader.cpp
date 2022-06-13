@@ -35,38 +35,38 @@ namespace library
     {
         HRESULT hr = S_OK;
 
-        // Compile the vertex shader
+        // Compile vertex shader
         ComPtr<ID3DBlob> pVSBlob = nullptr;
         hr = compile(pVSBlob.GetAddressOf());
-
         if (FAILED(hr))
         {
-            MessageBox(nullptr, L"The FX file cannot be compiled.  Please run this executable from the directory that contains the FX file.", L"Error", MB_OK);
+            MessageBox(nullptr, L"Cannot compile vertex shader!", L"Error", NULL);
             return hr;
         }
 
-        // Create the vertex shader
+        // Create vertex shader
         hr = pDevice->CreateVertexShader(pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), nullptr, m_vertexShader.GetAddressOf());
-
         if (FAILED(hr))
         {
+            MessageBox(nullptr, L"Cannot create vertex shader!", L"Error", NULL);
             return hr;
         }
 
-        // Create the input layout
+        // Define input layout
         D3D11_INPUT_ELEMENT_DESC aLayouts[] =
         {
-            { "POSITION", 0u, DXGI_FORMAT_R32G32B32_FLOAT, 0u, 0u, D3D11_INPUT_PER_VERTEX_DATA, 0u }
+            { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
         };
-        UINT numElements = ARRAYSIZE(aLayouts);
+        UINT uNumElements = ARRAYSIZE(aLayouts);
 
-        hr = pDevice->CreateInputLayout(aLayouts, numElements, pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), m_vertexLayout.GetAddressOf());
-
+        // Create  input layout
+        hr = pDevice->CreateInputLayout(aLayouts, uNumElements, pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), m_vertexLayout.GetAddressOf());
         if (FAILED(hr))
         {
+            MessageBox(nullptr, L"Cannot create input layout!", L"Error", NULL);
             return hr;
         }
 
-        return S_OK;
+        return hr;
     }
 }

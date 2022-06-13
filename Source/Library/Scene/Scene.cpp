@@ -28,7 +28,7 @@ namespace library
         : m_filePath(filePath)
         , m_voxels()
         , m_renderables()
-        , m_aPointLights{ nullptr }
+        , m_aPointLights{ nullptr, }
         , m_vertexShaders()
         , m_pixelShaders()
         , m_skyBox()
@@ -159,7 +159,7 @@ namespace library
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
       Method:   Scene::Initialize
 
-      Summary:  Initializes the voxels, shaders, renderables, models, 
+      Summary:  Initializes the voxels, shaders, renderables, models,
                 and skybox
 
       Args:     ID3D11Device* pDevice
@@ -212,26 +212,11 @@ namespace library
             {
                 return hr;
             }
-
-            for (int i = 0; i < it->second->GetNumMaterials(); ++i)
-            {
-                AddMaterial(it->second->GetMaterial(i));
-            }
         }
 
-        for (auto it = m_materials.begin(); it != m_materials.end(); ++it)
-        {
-            HRESULT hr = it->second->Initialize(pDevice, pImmediateContext);
-            if (FAILED(hr))
-            {
-                return hr;
-            }
-        }
-
-        if (m_skyBox)
+        if (m_skyBox != nullptr)
         {
             HRESULT hr = m_skyBox->Initialize(pDevice, pImmediateContext);
-
             if (FAILED(hr))
             {
                 return hr;
@@ -398,18 +383,6 @@ namespace library
         return S_OK;
     }
 
-    HRESULT Scene::AddMaterial(_In_ const std::shared_ptr<Material>& material)
-    {
-        if (m_materials.contains(material->GetName()))
-        {
-            return E_FAIL;
-        }
-
-        m_materials[material->GetName()] = material;
-
-        return S_OK;
-    }
-
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
       Method:   Scene::AddSkyBox
 
@@ -429,17 +402,16 @@ namespace library
         {
             return E_INVALIDARG;
         }
-        else
-        {
-            m_skyBox = skybox;
-            return S_OK;
-        }
+
+        m_skyBox = skybox;
+
+        return S_OK;
     }
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
       Method:   Scene::Update
 
-      Summary:  Update the renderables, models, point lights, skybox 
+      Summary:  Update the renderables, models, point lights, skybox
                 each frame
 
       Args:     FLOAT deltaTime
@@ -477,6 +449,7 @@ namespace library
     {
         return m_voxels;
     }
+
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
       Method:   Scene::GetRenderables
@@ -546,11 +519,6 @@ namespace library
     std::unordered_map<std::wstring, std::shared_ptr<PixelShader>>& Scene::GetPixelShaders()
     {
         return m_pixelShaders;
-    }
-
-    std::unordered_map<std::wstring, std::shared_ptr<Material>>& Scene::GetMaterials()
-    {
-        return m_materials;
     }
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
@@ -755,21 +723,6 @@ namespace library
         for (std::shared_ptr<Voxel>& voxel : m_voxels)
         {
             voxel->SetPixelShader(m_pixelShaders[pszPixelShaderName]);
-        }
-
-        return S_OK;
-    }
-
-    HRESULT Scene::SetMaterialOfVoxel(_In_ PCWSTR pszMaterialName)
-    {
-        if (!m_materials.contains(pszMaterialName))
-        {
-            return E_FAIL;
-        }
-
-        for (std::shared_ptr<Voxel>& voxel : m_voxels)
-        {
-            voxel->AddMaterial(m_materials[pszMaterialName]);
         }
 
         return S_OK;

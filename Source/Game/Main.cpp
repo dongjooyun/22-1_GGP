@@ -236,11 +236,12 @@ INT WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
         return 0;
     }
     // Environment Map
-    std::shared_ptr<library::VertexShader> environmentMapVertexShader = std::make_shared<library::VertexShader>(L"Shaders/ReflectionShader.fxh", "VSEnvironmentMap", "vs_5_0");
+    std::shared_ptr<library::VertexShader> environmentMapVertexShader = std::make_shared<library::VertexShader>(L"Shaders/EnvShaders.fxh", "VSEnvMap", "vs_5_0");
     if (FAILED(mainScene->AddVertexShader(L"EnvironmentMapShader", environmentMapVertexShader)))
     {
         return 0;
     }
+
     // Shadow
     std::shared_ptr<library::ShadowVertexShader> shadowMapVertexShader = std::make_shared<library::ShadowVertexShader>(L"Shaders/ShadowShaders.fxh", "VSShadow", "vs_5_0");
     if (FAILED(mainScene->AddVertexShader(L"ShadowMapShader", shadowMapVertexShader)))
@@ -273,13 +274,13 @@ INT WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
         return 0;
     }
     // Environment Map
-    std::shared_ptr<library::PixelShader> environmentMapPixelShader = std::make_shared<library::PixelShader>(L"Shaders/ReflectionShader.fxh", "PSEnvironmentMap", "ps_5_0");
+    std::shared_ptr<library::PixelShader> environmentMapPixelShader = std::make_shared<library::PixelShader>(L"Shaders/EnvShaders.fxh", "PSEnvMap", "ps_5_0");
     if (FAILED(mainScene->AddPixelShader(L"EnvironmentMapShader", environmentMapPixelShader)))
     {
         return 0;
     }
     // Environment Map for Cube
-    std::shared_ptr<library::PixelShader> environmentMapCubePixelShader = std::make_shared<library::PixelShader>(L"Shaders/ReflectionShader.fxh", "PSEnvironmentMapCube", "ps_5_0");
+    std::shared_ptr<library::PixelShader> environmentMapCubePixelShader = std::make_shared<library::PixelShader>(L"Shaders/EnvShaders.fxh", "PSEnvMappingCube", "ps_5_0");
     if (FAILED(mainScene->AddPixelShader(L"EnvironmentMapCubeShader", environmentMapCubePixelShader)))
     {
         return 0;
@@ -317,19 +318,18 @@ INT WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
         return 0;
     }
 
-    if (FAILED(mainScene->SetVertexShaderOfModel(L"Nanosuit", L"EnvironmentMapShader")))
+    if (FAILED(mainScene->SetVertexShaderOfModel(L"Nanosuit", L"PhongShader")))
     {
         return 0;
     }
 
-    if (FAILED(mainScene->SetPixelShaderOfModel(L"Nanosuit", L"EnvironmentMapShader")))
+    if (FAILED(mainScene->SetPixelShaderOfModel(L"Nanosuit", L"PhongShader")))
     {
         return 0;
     }
 
     XMFLOAT4 color;
-    XMStoreFloat4(&color, Colors::Orange);
-
+    XMStoreFloat4(&color, Colors::White);
     std::shared_ptr<library::PointLight> directionalLight = std::make_shared<library::PointLight>(
         XMFLOAT4(0.f, 30.f, 0.f, 1.0f),
         color,
@@ -375,23 +375,27 @@ INT WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
     {
         return 0;
     }
+    
+    // Environment Map for Cube
+    XMStoreFloat4(&color, Colors::White);
+    std::shared_ptr<Cube> reflectCube = std::make_shared<Cube>(color);
+    reflectCube->Translate(XMVectorSet(0.0f, -3.0f, 0.0f, 0.0f));
+    reflectCube->Scale(10.0f, 10.0f, 10.0f);
+    if (FAILED(mainScene->AddRenderable(L"ReflectCube", reflectCube)))
+    {
+        return 0;
+    }
+    if (FAILED(mainScene->SetVertexShaderOfRenderable(L"ReflectCube", L"EnvironmentMapShader")))
+    {
+        return 0;
+    }
+    if (FAILED(mainScene->SetPixelShaderOfRenderable(L"ReflectCube", L"EnvironmentMapCubeShader")))
+    {
+        return 0;
+    }
 
-    std::shared_ptr<RotatingCube> rotatingCube = std::make_shared<RotatingCube>(color);
-    rotatingCube->Translate(XMVectorSet(0.0f, 300.0f, 0.0f, 1.0f));
-    if (FAILED(mainScene->AddRenderable(L"RotatingCube", rotatingCube)))
-    {
-        return 0;
-    }
-    if (FAILED(mainScene->SetVertexShaderOfRenderable(L"RotatingCube", L"LightShader")))
-    {
-        return 0;
-    }
-    if (FAILED(mainScene->SetPixelShaderOfRenderable(L"RotatingCube", L"LightShader")))
-    {
-        return 0;
-    }
-
-    XMStoreFloat4(&color, Colors::Aqua);
+    // Environment Map for Rotating Cube
+    XMStoreFloat4(&color, Colors::White);
     std::shared_ptr<RotatingCube> reflectRotatingCube = std::make_shared<RotatingCube>(color);
     reflectRotatingCube->Translate(XMVectorSet(0.0f, 0.0f, 5.0f, 0.0f));
     reflectRotatingCube->Scale(10.0f, 10.0f, 10.0f);
@@ -404,23 +408,6 @@ INT WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
         return 0;
     }
     if (FAILED(mainScene->SetPixelShaderOfRenderable(L"ReflectRotatingCube", L"EnvironmentMapCubeShader")))
-    {
-        return 0;
-    }
-
-    XMStoreFloat4(&color, Colors::Silver);
-    std::shared_ptr<Cube> reflectCube = std::make_shared<Cube>(color);
-    reflectCube->Translate(XMVectorSet(0.0f, -5.0f, 0.0f, 0.0f));
-    reflectCube->Scale(10.0f, 10.0f, 10.0f);
-    if (FAILED(mainScene->AddRenderable(L"ReflectCube", reflectCube)))
-    {
-        return 0;
-    }
-    if (FAILED(mainScene->SetVertexShaderOfRenderable(L"ReflectCube", L"EnvironmentMapShader")))
-    {
-        return 0;
-    }
-    if (FAILED(mainScene->SetPixelShaderOfRenderable(L"ReflectCube", L"EnvironmentMapCubeShader")))
     {
         return 0;
     }

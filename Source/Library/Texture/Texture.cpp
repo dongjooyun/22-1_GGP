@@ -38,7 +38,7 @@ namespace library
       Modifies: [m_textureRV].
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     HRESULT Texture::Initialize(_In_ ID3D11Device* pDevice, _In_ ID3D11DeviceContext* pImmediateContext)
-		{
+    {
         HRESULT hr = CreateWICTextureFromFile(
             pDevice,
             pImmediateContext,
@@ -67,9 +67,6 @@ namespace library
                 .AddressU = D3D11_TEXTURE_ADDRESS_WRAP,
                 .AddressV = D3D11_TEXTURE_ADDRESS_WRAP,
                 .AddressW = D3D11_TEXTURE_ADDRESS_WRAP,
-                .ComparisonFunc = D3D11_COMPARISON_NEVER,
-                .MinLOD = 0,
-                .MaxLOD = D3D11_FLOAT32_MAX
             };
 
             hr = pDevice->CreateSamplerState(&sampDesc, s_samplers[static_cast<size_t>(eTextureSamplerType::TRILINEAR_WRAP)].GetAddressOf());
@@ -81,26 +78,23 @@ namespace library
 
         if (!s_samplers[static_cast<size_t>(eTextureSamplerType::TRILINEAR_CLAMP)].Get())
         {
-          D3D11_SAMPLER_DESC sampDesc =
-          {
-              .Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR,
-              .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
-              .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP,
-              .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP,
-              .ComparisonFunc = D3D11_COMPARISON_ALWAYS,
-              .MinLOD = 0,
-              .MaxLOD = D3D11_FLOAT32_MAX
-          };
+            D3D11_SAMPLER_DESC sampDesc =
+            {
+                .Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR,
+                .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
+                .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP,
+                .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP,
+            };
 
-          hr = pDevice->CreateSamplerState(&sampDesc, s_samplers[static_cast<size_t>(eTextureSamplerType::TRILINEAR_CLAMP)].GetAddressOf());
-          if (FAILED(hr))
-          {
-              return hr;
-          }
+            hr = pDevice->CreateSamplerState(&sampDesc, s_samplers[static_cast<size_t>(eTextureSamplerType::TRILINEAR_CLAMP)].GetAddressOf());
+            if (FAILED(hr))
+            {
+                return hr;
+            }
         }
-        
+
         return hr;
-		}
+    }
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
       Method:   Texture::GetTextureResourceView
@@ -124,7 +118,7 @@ namespace library
                   Sampler type
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
     eTextureSamplerType Texture::GetSamplerType() const
-		{
-			return m_textureSamplerType;
-		}
+    {
+        return m_textureSamplerType;
+    }
 }

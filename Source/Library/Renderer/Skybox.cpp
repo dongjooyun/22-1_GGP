@@ -42,26 +42,22 @@ namespace library
 
         hr = Model::Initialize(pDevice, pImmediateContext);
 
-        if (FAILED(hr))
-        {
-            return hr;
-        }
-
         Scale(m_scale, m_scale, m_scale);
 
-        // Set first mesh's material index to zero
         m_aMeshes[0].uMaterialIndex = 0u;
 
-        // Set & initialize first material's diffuse texture
-        m_aMaterials[0]->pDiffuse = std::make_shared<Texture>(m_cubeMapFileName);
-        hr = m_aMaterials[0]->pDiffuse->Initialize(pDevice, pImmediateContext);
+        // Set and initialize the first material's diffuse texture
+        m_aMaterials[0]->pDiffuse = std::make_shared<Texture>(m_cubeMapFileName, eTextureSamplerType::TRILINEAR_CLAMP);
 
-        if (FAILED(hr))
+        hr = m_aMaterials[0]->pDiffuse->Initialize(pDevice, pImmediateContext);
+        if (SUCCEEDED(hr))
         {
-            return hr;
+            OutputDebugString(L"Loaded diffuse texture \"");
+            OutputDebugString(m_cubeMapFileName.c_str());
+            OutputDebugString(L"\"\n");
         }
 
-        return S_OK;
+        return hr;
     }
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
@@ -72,7 +68,7 @@ namespace library
       Returns:  const std::shared_ptr<Texture>&
                   Cube map texture object
     M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M---M-M*/
-    const std::shared_ptr<Texture>&Skybox::GetSkyboxTexture() const
+    const std::shared_ptr<Texture>& Skybox::GetSkyboxTexture() const
     {
         return m_aMaterials[0]->pDiffuse;
     }
@@ -91,21 +87,14 @@ namespace library
     {
         const aiVector3D zero3d(0.0f, 0.0f, 0.0f);
 
+        // Populate the vertex attribute vector
         for (UINT i = 0u; i < pMesh->mNumVertices; ++i)
         {
             const aiVector3D& position = pMesh->mVertices[i];
             const aiVector3D& normal = pMesh->mNormals[i];
-            const aiVector3D& texCoord = pMesh->HasTextureCoords(0u) 
-                                         ? pMesh->mTextureCoords[0][i] 
-                                         : zero3d;
-
-            const aiVector3D& tangent = pMesh->HasTangentsAndBitangents() 
-                                        ? pMesh->mTangents[i] 
-                                        : zero3d;
-
-            const aiVector3D& bitangent = pMesh->HasTangentsAndBitangents() 
-                                        ? pMesh->mBitangents[i] 
-                                        : zero3d;
+            const aiVector3D& texCoord = pMesh->HasTextureCoords(0u) ? pMesh->mTextureCoords[0][i] : zero3d;
+            const aiVector3D& tangent = pMesh->HasTangentsAndBitangents() ? pMesh->mTangents[i] : zero3d;
+            const aiVector3D& bitangent = pMesh->HasTangentsAndBitangents() ? pMesh->mBitangents[i] : zero3d;
 
             SimpleVertex vertex =
             {
@@ -113,24 +102,36 @@ namespace library
                 .TexCoord = XMFLOAT2(texCoord.x, texCoord.y),
                 .Normal = XMFLOAT3(normal.x, normal.y, normal.z)
             };
+
+            m_aVertices.push_back(vertex);
+
             NormalData normalData =
             {
-                .Tangent = XMFLOAT3(tangent.x,tangent.y,tangent.z),
-                .Bitangent = XMFLOAT3(bitangent.x,bitangent.y,bitangent.z)
+                .Tangent = XMFLOAT3(tangent.x, tangent.y, tangent.z),
+                .Bitangent = XMFLOAT3(bitangent.x, bitangent.y, bitangent.z)
             };
-            m_aVertices.push_back(vertex);
+
             m_aNormalData.push_back(normalData);
         }
 
-        for (UINT i = 0u; i < pMesh->mNumFaces; i++)
+        // Populate the index buffer
+        for (UINT i = 0u; i < pMesh->mNumFaces; ++i)
         {
             const aiFace& face = pMesh->mFaces[i];
             assert(face.mNumIndices == 3u);
 
-            m_aIndices.push_back(static_cast<WORD>(face.mIndices[2]));
-            m_aIndices.push_back(static_cast<WORD>(face.mIndices[1]));
-            m_aIndices.push_back(static_cast<WORD>(face.mIndices[0]));
+            WORD aIndices[3] =
+            {
+                static_cast<WORD>(face.mIndices[2]),
+                static_cast<WORD>(face.mIndices[1]),
+                static_cast<WORD>(face.mIndices[0]),
+            };
+
+            m_aIndices.push_back(aIndices[0]);
+            m_aIndices.push_back(aIndices[1]);
+            m_aIndices.push_back(aIndices[2]);
         }
+
         initMeshBones(uMeshIndex, pMesh);
     }
 }

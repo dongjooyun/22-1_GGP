@@ -30,7 +30,7 @@ namespace library
         , m_rotation(XMMatrixIdentity())
         , m_view(XMMatrixLookAtLH(m_eye, m_at, m_up))
         , m_cbChangeOnCameraMovement(nullptr)
-    { }
+    {}
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
       Method:   Camera::GetEye
@@ -178,7 +178,6 @@ namespace library
         };
 
         hr = device->CreateBuffer(&bd, nullptr, m_cbChangeOnCameraMovement.GetAddressOf());
-
         if (FAILED(hr))
         {
             MessageBox(nullptr, L"Cannot create camera buffer!", L"Error", NULL);

@@ -85,6 +85,9 @@
     <None Include="Shaders\VoxelShaders.fxh">
       <Filter>Header Files\Shaders</Filter>
     </None>
+    <None Include="Shaders\EnvShaders.fxh">
+      <Filter>Header Files\Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\CubeMap_PS.hlsl">

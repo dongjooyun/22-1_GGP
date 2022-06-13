@@ -4,8 +4,7 @@ namespace library
 {
     SkinningVertexShader::SkinningVertexShader(_In_ PCWSTR pszFileName, _In_ PCSTR pszEntryPoint, _In_ PCSTR pszShaderModel)
         : VertexShader(pszFileName, pszEntryPoint, pszShaderModel)
-    {
-    }
+    {}
 
     HRESULT SkinningVertexShader::Initialize(_In_ ID3D11Device* pDevice)
     {
@@ -19,12 +18,7 @@ namespace library
                 L"The FX file %s cannot be compiled. Please run this executable from the directory that contains the FX file.",
                 m_pszFileName
             );
-            MessageBox(
-                nullptr,
-                szMessage,
-                L"Error",
-                MB_OK
-            );
+            MessageBox(nullptr, szMessage, L"Error", MB_OK);
             return hr;
         }
 

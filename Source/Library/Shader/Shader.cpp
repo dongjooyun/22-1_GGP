@@ -22,7 +22,7 @@ namespace library
         : m_pszFileName(pszFileName)
         , m_pszEntryPoint(pszEntryPoint)
         , m_pszShaderModel(pszShaderModel)
-    { }
+    {}
 
     /*M+M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M+++M
       Method:   Shader::GetFileName

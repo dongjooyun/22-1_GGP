@@ -79,8 +79,8 @@ namespace library
     Model::Model(_In_ const std::filesystem::path& filePath)
         : Renderable(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f))
         , m_filePath(filePath)
-        , m_animationBuffer(nullptr)
-        , m_skinningConstantBuffer(nullptr)
+        , m_animationBuffer()
+        , m_skinningConstantBuffer()
         , m_aVertices(std::vector<SimpleVertex>())
         , m_aAnimationData(std::vector<AnimationData>())
         , m_aIndices(std::vector<WORD>())
@@ -88,7 +88,7 @@ namespace library
         , m_aBoneInfo(std::vector<BoneInfo>())
         , m_aTransforms(std::vector<XMMATRIX>())
         , m_boneNameToIndexMap(std::unordered_map<std::string, UINT>())
-        , m_pScene()
+        , m_pScene(nullptr)
         , m_timeSinceLoaded(0.0f)
         , m_globalInverseTransform(XMMatrixIdentity())
     {}
@@ -113,62 +113,51 @@ namespace library
     {
         HRESULT hr = S_OK;
 
-        // Read 3D model file
         m_pScene = sm_pImporter->ReadFile(m_filePath.string().c_str(), ASSIMP_LOAD_FLAGS);
-        m_pScene = sm_pImporter->ReadFile(m_filePath.string().c_str()
-                                         , aiProcess_Triangulate 
-                                         | aiProcess_GenSmoothNormals
-                                         | aiProcess_CalcTangentSpace 
-                                         | aiProcess_ConvertToLeftHanded
-                                         );
+        m_pScene = sm_pImporter->GetOrphanedScene();
 
         // Initialize model
         if (m_pScene)
         {
-            m_globalInverseTransform = ConvertMatrix(m_pScene->mRootNode->mTransformation);
-            XMVECTOR determinant = XMMatrixDeterminant(m_globalInverseTransform);
-            m_globalInverseTransform = XMMatrixInverse(&determinant, m_globalInverseTransform);
-            
+            XMVECTOR det = XMMatrixDeterminant(m_world);
+            m_globalInverseTransform = XMMatrixInverse(&det, m_world);
             hr = initFromScene(pDevice, pImmediateContext, m_pScene, m_filePath);
-            if (FAILED(hr))
-            {
-                return hr;
-            }
         }
         else
         {
+            hr = E_FAIL;
             OutputDebugString(L"Error parsing ");
             OutputDebugString(m_filePath.c_str());
             OutputDebugString(L": ");
             OutputDebugStringA(sm_pImporter->GetErrorString());
             OutputDebugString(L"\n");
-
-            return E_FAIL;
         }
 
-        // Create animation buffer
-        D3D11_BUFFER_DESC aBufferDesc =
+        if ((m_pScene != nullptr) && m_pScene->HasAnimations())
         {
-            .ByteWidth = static_cast<UINT>(sizeof(AnimationData) * m_aAnimationData.size()),
-            .Usage = D3D11_USAGE_DEFAULT,
-            .BindFlags = D3D11_BIND_VERTEX_BUFFER,
-            .CPUAccessFlags = 0u,
-            .MiscFlags = 0u,
-            .StructureByteStride = 0u
-        };
+            // Create animation buffer
+            D3D11_BUFFER_DESC aBufferDesc =
+            {
+                .ByteWidth = static_cast<UINT>(sizeof(AnimationData) * m_aAnimationData.size()),
+                .Usage = D3D11_USAGE_DEFAULT,
+                .BindFlags = D3D11_BIND_VERTEX_BUFFER,
+                .CPUAccessFlags = 0u,
+                .MiscFlags = 0u,
+                .StructureByteStride = 0u
+            };
+            D3D11_SUBRESOURCE_DATA aInitData =
+            {
+                .pSysMem = &m_aAnimationData[0],
+                .SysMemPitch = 0u,
+                .SysMemSlicePitch = 0u
+            };
 
-        D3D11_SUBRESOURCE_DATA aInitData =
-        {
-            .pSysMem = &m_aAnimationData[0],
-            .SysMemPitch = 0u,
-            .SysMemSlicePitch = 0u
-        };
-
-        hr = pDevice->CreateBuffer(&aBufferDesc, &aInitData, m_animationBuffer.GetAddressOf());
-        if (FAILED(hr))
-        {
-            MessageBox(nullptr, L"Cannot create animation buffer!", L"Error", NULL);
-            return hr;
+            hr = pDevice->CreateBuffer(&aBufferDesc, &aInitData, m_animationBuffer.GetAddressOf());
+            if (FAILED(hr))
+            {
+                MessageBox(nullptr, L"Cannot create animation buffer!", L"Error", NULL);
+                return hr;
+            }
         }
 
         // Create skinning constant buffer
@@ -208,16 +197,10 @@ namespace library
 
         if (m_pScene->HasAnimations())
         {
-            FLOAT ticksPerSecond = static_cast<FLOAT>(
-                m_pScene->mAnimations[0]->mTicksPerSecond != 0.0
-                ? m_pScene->mAnimations[0]->mTicksPerSecond
-                : 25.0f
-                );
-
+            FLOAT ticksPerSecond = static_cast<FLOAT>(m_pScene->mAnimations[0]->mTicksPerSecond != 0.0 ? m_pScene->mAnimations[0]->mTicksPerSecond : 25.0f);
             FLOAT timeInTicks = m_timeSinceLoaded * ticksPerSecond;
             FLOAT animationTimeTicks = fmod(timeInTicks, static_cast<FLOAT>(m_pScene->mAnimations[0]->mDuration));
-
-            if (m_pScene->mRootNode)
+            if (m_pScene->mRootNode != nullptr)
             {
                 readNodeHierarchy(animationTimeTicks, m_pScene->mRootNode, XMMatrixIdentity());
                 m_aTransforms.resize(m_aBoneInfo.size());
@@ -576,15 +559,18 @@ namespace library
             return hr;
         }
 
-        for (size_t i = 0; i < m_aVertices.size(); ++i)
+        if (m_pScene->HasAnimations())
         {
-            m_aAnimationData.push_back(
-                AnimationData
-                {
-                    .aBoneIndices = XMUINT4(m_aBoneData.at(i).aBoneIds),
-                    .aBoneWeights = XMFLOAT4(m_aBoneData.at(i).aWeights)
-                }
-            );
+            for (size_t i = 0; i < m_aVertices.size(); ++i)
+            {
+                m_aAnimationData.push_back(
+                    AnimationData
+                    {
+                        .aBoneIndices = XMUINT4(m_aBoneData.at(i).aBoneIds),
+                        .aBoneWeights = XMFLOAT4(m_aBoneData.at(i).aWeights)
+                    }
+                );
+            }
         }
 
         hr = initialize(pDevice, pImmediateContext);
@@ -622,7 +608,6 @@ namespace library
     {
         HRESULT hr = S_OK;
 
-        // Extract directory part from the file name
         std::filesystem::path parentDirectory = filePath.parent_path();
 
         // Initialize materials
@@ -775,7 +760,6 @@ namespace library
         FLOAT deltaTime = t2 - t1;
         FLOAT factor = (animationTimeTicks - t1) / deltaTime;
         assert(factor >= 0.0f && factor <= 1.0f);
-
         const aiVector3D& start = pNodeAnim->mPositionKeys[uPositionIndex].mValue;
         const aiVector3D& end = pNodeAnim->mPositionKeys[uNextPositionIndex].mValue;
         aiVector3D delta = end - start;
@@ -805,18 +789,15 @@ namespace library
         UINT uRotationIndex = findRotation(animationTimeTicks, pNodeAnim);
         UINT uNextRotationIndex = uRotationIndex + 1;
         assert(uNextRotationIndex < pNodeAnim->mNumRotationKeys);
-
         FLOAT t1 = static_cast<FLOAT>(pNodeAnim->mRotationKeys[uRotationIndex].mTime);
         FLOAT t2 = static_cast<FLOAT>(pNodeAnim->mRotationKeys[uNextRotationIndex].mTime);
         FLOAT deltaTime = t2 - t1;
         FLOAT factor = (animationTimeTicks - t1) / deltaTime;
         assert(factor >= 0.0f && factor <= 1.0f);
-
         aiQuaternion outQ;
         const aiQuaternion& startRotationQ = pNodeAnim->mRotationKeys[uRotationIndex].mValue;
         const aiQuaternion& endRotationQ = pNodeAnim->mRotationKeys[uNextRotationIndex].mValue;
         aiQuaternion::Interpolate(outQ, startRotationQ, endRotationQ, factor);
-
         outQ = startRotationQ;
         outQ.Normalize();
         outQuaternion = ConvertQuaternionToVector(outQ);
@@ -845,13 +826,11 @@ namespace library
         UINT uScalingIndex = findScaling(animationTimeTicks, pNodeAnim);
         UINT uNextScalingIndex = uScalingIndex + 1;
         assert(uNextScalingIndex < pNodeAnim->mNumScalingKeys);
-
         FLOAT t1 = static_cast<FLOAT>(pNodeAnim->mScalingKeys[uScalingIndex].mTime);
         FLOAT t2 = static_cast<FLOAT>(pNodeAnim->mScalingKeys[uNextScalingIndex].mTime);
         FLOAT deltaTime = t2 - t1;
         FLOAT factor = (animationTimeTicks - t1) / deltaTime;
         assert(factor >= 0.0f && factor <= 1.0f);
-
         const aiVector3D& start = pNodeAnim->mScalingKeys[uScalingIndex].mValue;
         const aiVector3D& end = pNodeAnim->mScalingKeys[uNextScalingIndex].mValue;
         aiVector3D delta = end - start;
@@ -883,6 +862,7 @@ namespace library
     )
     {
         HRESULT hr = S_OK;
+
         m_aMaterials[uIndex]->pDiffuse = nullptr;
 
         if (pMaterial->GetTextureCount(aiTextureType_DIFFUSE) > 0)
@@ -947,6 +927,7 @@ namespace library
     )
     {
         HRESULT hr = S_OK;
+
         m_aMaterials[uIndex]->pSpecularExponent = nullptr;
 
         if (pMaterial->GetTextureCount(aiTextureType_SHININESS) > 0)
@@ -1004,6 +985,7 @@ namespace library
     HRESULT Model::loadNormalTexture(_In_ ID3D11Device* pDevice, _In_ ID3D11DeviceContext* pImmediateContext, _In_ const std::filesystem::path& parentDirectory, _In_ const aiMaterial* pMaterial, _In_ UINT uIndex)
     {
         HRESULT hr = S_OK;
+
         m_aMaterials[uIndex]->pNormal = nullptr;
 
         if (pMaterial->GetTextureCount(aiTextureType_HEIGHT) > 0)
@@ -1102,21 +1084,22 @@ namespace library
 
         if (pNodeAnim)
         {
-            // Scaling
+            // Interpolate scaling and generate scaling transformation matrix
             XMFLOAT3 scaling = XMFLOAT3();
             interpolateScaling(scaling, animationTimeTicks, pNodeAnim);
             XMMATRIX scalingM = XMMatrixScaling(scaling.x, scaling.y, scaling.z);
 
-            // Rotation
+            // Interpolate rotation and generate rotation transformation matrix
             XMVECTOR rotation = XMVECTOR();
             interpolateRotation(rotation, animationTimeTicks, pNodeAnim);
             XMMATRIX rotationM = XMMatrixRotationQuaternion(rotation);
 
-            // Translation
+            // Interpolate translation and generate translation transformation matrix
             XMFLOAT3 translation = XMFLOAT3();
             interpolatePosition(translation, animationTimeTicks, pNodeAnim);
             XMMATRIX translationM = XMMatrixTranslation(translation.x, translation.y, translation.z);
 
+            // Combine above transformations
             NodeTransform = scalingM * rotationM * translationM;
         }
 

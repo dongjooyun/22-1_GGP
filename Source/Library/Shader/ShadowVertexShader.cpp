@@ -4,8 +4,7 @@ namespace library
 {
     ShadowVertexShader::ShadowVertexShader(_In_ PCWSTR pszFileName, _In_ PCSTR pszEntryPoint, _In_ PCSTR pszShaderModel)
         : VertexShader(pszFileName, pszEntryPoint, pszShaderModel)
-    {
-    }
+    {}
 
     HRESULT ShadowVertexShader::Initialize(_In_ ID3D11Device* pDevice)
     {
@@ -19,12 +18,7 @@ namespace library
                 L"The FX file %s cannot be compiled. Please run this executable from the directory that contains the FX file.",
                 m_pszFileName
             );
-            MessageBox(
-                nullptr,
-                szMessage,
-                L"Error",
-                MB_OK
-            );
+            MessageBox(nullptr, szMessage, L"Error", MB_OK);
             return hr;
         }
 
@@ -34,7 +28,7 @@ namespace library
             return hr;
         }
 
-        // Define the input layout
+        // Define input layout
         D3D11_INPUT_ELEMENT_DESC aLayouts[] =
         {
             { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
@@ -45,7 +39,7 @@ namespace library
         };
         UINT uNumElements = ARRAYSIZE(aLayouts);
 
-        // Create the input layout
+        // Create input layout
         hr = pDevice->CreateInputLayout(aLayouts, uNumElements, vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), m_vertexLayout.GetAddressOf());
         if (FAILED(hr))
         {
